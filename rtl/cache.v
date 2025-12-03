@@ -84,14 +84,42 @@ module cache (
     // arrays as you please.
 
     // Backing memory, modeled as two separate ways.
-    reg [   31:0] datas0 [DEPTH - 1:0][D - 1:0];
-    reg [   31:0] datas1 [DEPTH - 1:0][D - 1:0];
-    reg [T - 1:0] tags0  [DEPTH - 1:0];
-    reg [T - 1:0] tags1  [DEPTH - 1:0];
-    reg [1:0] valid [DEPTH - 1:0];
-    reg       lru   [DEPTH - 1:0];
+    reg [   31:0] datas0 [DEPTH - 1:0][D - 1:0];   //stores first line in set   (32 lines x 4 words per line)
+    reg [   31:0] datas1 [DEPTH - 1:0][D - 1:0];   //stores second line in set 
+    reg [T - 1:0] tags0  [DEPTH - 1:0];            //stores tag from first line in set
+    reg [T - 1:0] tags1  [DEPTH - 1:0];            //stores tag from second line in set
+    reg [1:0] valid [DEPTH - 1:0];                 //2-bit valid (one for each line in set)
+    reg       lru   [DEPTH - 1:0];                 //bit to track lru
 
-    // Fill in your implementation here.
+ // Fill in your implementation here.
+ 
+ /*
+ i_req_addr is word aligned so 2 LSBs are 0 
+ */
+ wire [22:0] req_tag      = i_req_addr[31:9];  //top 23 bits are tag 
+ wire [4:0]  req_index     = i_req_addr [8:4];   //5 set bits in address
+ wire [1:0]  req_wrdOffset = i_req_addr [3:2];   //2 bits for word offset for 16-byte blocks 
+
+
+ typedef enum reg [1:0] {IDLE, } state_t;
+ state_t state, next_state;
+
+always @(*) begin
+ //default values
+ next_state = state;
+
+    case(state)
+        IDLE: begin
+
+        end
+
+        XXXX: begin
+
+        end        
+    endcase
+end
+
+
 endmodule
 
 `default_nettype wire
