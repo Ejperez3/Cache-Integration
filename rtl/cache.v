@@ -101,8 +101,18 @@ module cache (
  wire [1:0]  req_wrdOffset = i_req_addr [3:2];   //2 bits for word offset for 16-byte blocks 
 
 
- typedef enum reg [1:0] {IDLE, } state_t;
+ typedef enum reg [1:0] {IDLE,CHECK_HIT,MISS } state_t;
  state_t state, next_state;
+
+ 
+ always @(posedge i_clk or posedge i_rst) begin
+    if (i_rst) begin
+        state <= IDLE;
+        o_busy <= 0;
+    end else begin
+        state <= next_state;
+    end
+ end
 
 always @(*) begin
  //default values
@@ -113,9 +123,15 @@ always @(*) begin
 
         end
 
-        XXXX: begin
+        CHECK_HIT: begin
 
-        end        
+        end 
+
+
+        MISS: begin 
+
+        end            
+
     endcase
 end
 
