@@ -120,18 +120,16 @@ always @(*) begin
 
     case(state)
         IDLE: begin
-
+            //hit should complete in one cycle 
         end
 
-        CHECK_HIT: begin
+        MEMREAD: begin
 
         end 
-
 
         MISS: begin 
 
         end            
-
     endcase
 end
 
@@ -139,3 +137,14 @@ end
 endmodule
 
 `default_nettype wire
+
+//are request signals only present for one clk cycle ? 
+
+//IDLE  --> MEMREAD --> 
+
+//IDLE check request if hit complete in 1 cycle (read and write)
+//Complete write through in one also? what if mem not ready ? 
+
+//if not a hit always read memory (new state) (done for read)
+
+//for write need to write back to memory 3rd state ? 
