@@ -17,6 +17,7 @@ module cache (
     output wire [31:0] o_mem_wdata,
     input  wire [31:0] i_mem_rdata,
     input  wire        i_mem_valid,
+
     // Interface to CPU hart. This is nearly identical to the phase 5 hart memory
     // interface, but includes a stall signal (`o_busy`), and the input/output
     // polarities are swapped for obvious reasons.
@@ -79,6 +80,16 @@ module cache (
   localparam T = 32 - O - S;  // 23 bit tag
   localparam D = 2 ** O / 4;  // 16 bytes per line / 4 bytes per word = 4 words per line
 
+  //reg versions of the outputs of the module 
+  reg [31:0] o_mem_addr_reg;
+  assign o_mem_addr = o_mem_addr_reg;
+  reg o_mem_ren_reg;
+  assign o_mem_ren = o_mem_ren_reg;
+  reg o_mem_wen_reg;
+  assign o_mem_wen_reg = o_mem_wen_reg;
+  reg [31:0] o_mem_wdata_reg;
+  assign o_mem_wdata = o_mem_wdata_reg;
+
   // The following memory arrays model the cache structure. As this is
   // an internal implementation detail, you are *free* to modify these
   // arrays as you please.
@@ -129,43 +140,42 @@ module cache (
 
   always @(posedge i_clk or posedge i_rst) begin
     if (i_rst) begin
-      state  <= IDLE;
+      state <= IDLE;
       o_busy <= 0;
-      i_req_wen_ff<=1'b0;
-      i_req_ren_ff<=1'b0;
+      i_req_wen_ff <= 1'b0;
+      i_req_ren_ff <= 1'b0;
     end else begin
       state <= next_state;
-      if(state==IDLE)begin
-        i_req_wen_ff<=i_req_wen;
-        i_req_ren_ff<=i_req_ren;
+      if (state == IDLE) begin
+        i_req_wen_ff <= i_req_wen;
+        i_req_ren_ff <= i_req_ren;
       end
     end
   end
 
+  reg busy1;
+  assign o_busy = busy1;
   //write signal to be set to 1 inside the state machine when in the write
   //state
   always @(*) begin
     //default values
     next_state = state;
+    busy1 = 1'b0;
     case (state)
       IDLE: begin
         //if hit, remain in the IDLE state
         //otherwise, transition into memread state
-        if (idle) next_state = IDLE;
-        else
+        if ((i_req_wen || i_req_ren) && ~hit) begin
           next_state = MEMREAD;
-        //while in the IDLE state, set control signals
-        o_busy=1'b0;
+          busy1 = 1'b1;
+        end
       end
       MEMREAD: begin
-        if(~i_mem_ready)
-          next_state=MEMREAD;
-        else if(i_req_ren_ff &&)begin
-        end
-
+        busy1 = 1'b1;
       end
 
       MEMWRITE: begin
+        busy1 = 1'b1;
 
       end
     endcase
@@ -186,3 +196,7 @@ endmodule
 //if not a hit always read memory (new state) (done for read)
 
 //for write need to write back to memory 3rd state ? 
+
+
+
+
