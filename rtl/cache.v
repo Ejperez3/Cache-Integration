@@ -127,6 +127,23 @@ module cache (
   end
 
 
+ integer i, x;
+ always @(posedge i_clk or posedge i_rst) begin
+    if (i_rst) begin
+        for(i = 0; i < 32; i = i+1) begin 
+            valid[i] <= 2'd0;
+            tags0[i] <= 23'd0;
+            tags1[i] <= 23'd0;
+            lru[i] <= 1'd0; 
+            for(x = 0; x<4; x = x+1) begin
+                datas0[i][x] <= 32'b0;
+                datas1[i][x] <= 32'b0;
+            end
+        end 
+    end else begin
+
+    end
+ end
 
   typedef enum reg [1:0] {
     IDLE,
