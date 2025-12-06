@@ -101,7 +101,7 @@ module cache (
  wire [1:0]  req_wrdOffset = i_req_addr [3:2];   //2 bits for word offset for 16-byte blocks 
 
 
- typedef enum reg [1:0] {IDLE,CHECK_HIT,MISS } state_t;
+ typedef enum reg [1:0] {IDLE,MEMREAD,MEMWRITE } state_t;
  state_t state, next_state;
 
  
@@ -127,7 +127,7 @@ always @(*) begin
 
         end 
 
-        MISS: begin 
+        MEMWRITE: begin 
 
         end            
     endcase
