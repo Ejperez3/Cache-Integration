@@ -66,86 +66,110 @@ module cache (
     // THe 32-bit data word read from memory on a read request.
     output wire [31:0] o_res_rdata
 );
-    // These parameters are equivalent to those provided in the project
-    // 6 specification. Feel free to use them, but hardcoding these numbers
-    // rather than using the localparams is also permitted, as long as the
-    // same values are used (and consistent with the project specification).
-    //
-    // 32 sets * 2 ways per set * 16 bytes per way = 1K cache
-    localparam O = 4;            // 4 bit offset => 16 byte cache line
-    localparam S = 5;            // 5 bit set index => 32 sets
-    localparam DEPTH = 2 ** S;   // 32 sets
-    localparam W = 2;            // 2 way set associative, NMRU
-    localparam T = 32 - O - S;   // 23 bit tag
-    localparam D = 2 ** O / 4;   // 16 bytes per line / 4 bytes per word = 4 words per line
+  // These parameters are equivalent to those provided in the project
+  // 6 specification. Feel free to use them, but hardcoding these numbers
+  // rather than using the localparams is also permitted, as long as the
+  // same values are used (and consistent with the project specification).
+  //
+  // 32 sets * 2 ways per set * 16 bytes per way = 1K cache
+  localparam O = 4;  // 4 bit offset => 16 byte cache line
+  localparam S = 5;  // 5 bit set index => 32 sets
+  localparam DEPTH = 2 ** S;  // 32 sets
+  localparam W = 2;  // 2 way set associative, NMRU
+  localparam T = 32 - O - S;  // 23 bit tag
+  localparam D = 2 ** O / 4;  // 16 bytes per line / 4 bytes per word = 4 words per line
 
-    // The following memory arrays model the cache structure. As this is
-    // an internal implementation detail, you are *free* to modify these
-    // arrays as you please.
+  // The following memory arrays model the cache structure. As this is
+  // an internal implementation detail, you are *free* to modify these
+  // arrays as you please.
 
-    // Backing memory, modeled as two separate ways.
-    reg [   31:0] datas0 [DEPTH - 1:0][D - 1:0];   //stores first line in set   (32 lines x 4 words per line)
-    reg [   31:0] datas1 [DEPTH - 1:0][D - 1:0];   //stores second line in set 
-    reg [T - 1:0] tags0  [DEPTH - 1:0];            //stores tag from first line in set
-    reg [T - 1:0] tags1  [DEPTH - 1:0];            //stores tag from second line in set
-    reg [1:0] valid [DEPTH - 1:0];                 //2-bit valid (one for each line in set)
-    reg       lru   [DEPTH - 1:0];                 //bit to track lru
+  // Backing memory, modeled as two separate ways.
+  reg [   31:0] datas0 [DEPTH - 1:0][D - 1:0];   //stores first line in set   (32 lines x 4 words per line)
+  reg [31:0] datas1[DEPTH - 1:0][D - 1:0];  //stores second line in set 
+  reg [T - 1:0] tags0[DEPTH - 1:0];  //stores tag from first line in set
+  reg [T - 1:0] tags1[DEPTH - 1:0];  //stores tag from second line in set
+  reg [1:0] valid[DEPTH - 1:0];  //2-bit valid (one for each line in set)
+  reg lru[DEPTH - 1:0];  //bit to track lru
 
- // Fill in your implementation here.
- 
- /*
+  // Fill in your implementation here.
+
+  /*
  i_req_addr is word aligned so 2 LSBs are 0 
  */
- wire [22:0] req_tag      = i_req_addr[31:9];  //top 23 bits are tag 
- wire [4:0]  req_index     = i_req_addr [8:4];   //5 set bits in address
- wire [1:0]  req_wrdOffset = i_req_addr [3:2];   //2 bits for word offset for 16-byte blocks 
- wire hit;
+  wire [22:0] req_tag = i_req_addr[31:9];  //top 23 bits are tag 
+  wire [4:0] req_index = i_req_addr[8:4];  //5 set bits in address
+  wire [1:0] req_wrdOffset = i_req_addr[3:2];  //2 bits for word offset for 16-byte blocks 
+  wire hit;
 
-//check if valid bit is set & if tag matches request 
- wire Line0_hit = valid[req_index][0] && (tags0[req_index] == req_tag);
- wire Line1_hit = valid[req_index][1] && (tags1[req_index] == req_tag);
- assign hit = Line0_hit || Line1_hit;
+  //check if valid bit is set & if tag matches request 
+  wire Line0_hit = valid[req_index][0] && (tags0[req_index] == req_tag);
+  wire Line1_hit = valid[req_index][1] && (tags1[req_index] == req_tag);
+  assign hit = Line0_hit || Line1_hit;
 
- always @(posedge i_clk or posedge i_rst) begin
+  always @(posedge i_clk or posedge i_rst) begin
     if (i_rst) begin
-        state <= IDLE;
-        o_busy <= 0;
+      state  <= IDLE;
+      o_busy <= 0;
     end else begin
-        state <= next_state;
+      state <= next_state;
     end
- end
+  end
 
 
- typedef enum reg [1:0] {IDLE,MEMREAD,MEMWRITE } state_t;
- state_t state, next_state;
- 
- always @(posedge i_clk or posedge i_rst) begin
+
+  typedef enum reg [1:0] {
+    IDLE,
+    MEMREAD,
+    MEMWRITE
+  } state_t;
+  state_t state, next_state;
+  //2 registers to keep track of what the request-signal type was
+  reg i_req_wen_ff;
+  reg i_req_ren_ff;
+
+  always @(posedge i_clk or posedge i_rst) begin
     if (i_rst) begin
-        state <= IDLE;
-        o_busy <= 0;
+      state  <= IDLE;
+      o_busy <= 0;
+      i_req_wen_ff<=1'b0;
+      i_req_ren_ff<=1'b0;
     end else begin
-        state <= next_state;
+      state <= next_state;
+      if(state==IDLE)begin
+        i_req_wen_ff<=i_req_wen;
+        i_req_ren_ff<=i_req_ren;
+      end
     end
- end
+  end
 
-always @(*) begin
- //default values
- next_state = state;
-
-    case(state)
-        IDLE: begin
-            //hit should complete in one cycle 
+  //write signal to be set to 1 inside the state machine when in the write
+  //state
+  always @(*) begin
+    //default values
+    next_state = state;
+    case (state)
+      IDLE: begin
+        //if hit, remain in the IDLE state
+        //otherwise, transition into memread state
+        if (idle) next_state = IDLE;
+        else
+          next_state = MEMREAD;
+        //while in the IDLE state, set control signals
+        o_busy=1'b0;
+      end
+      MEMREAD: begin
+        if(~i_mem_ready)
+          next_state=MEMREAD;
+        else if(i_req_ren_ff &&)begin
         end
 
-        MEMREAD: begin
+      end
 
-        end 
+      MEMWRITE: begin
 
-        MEMWRITE: begin 
-
-        end            
+      end
     endcase
-end
+  end
 
 
 endmodule
