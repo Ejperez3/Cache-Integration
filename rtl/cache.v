@@ -99,11 +99,25 @@ module cache (
  wire [22:0] req_tag      = i_req_addr[31:9];  //top 23 bits are tag 
  wire [4:0]  req_index     = i_req_addr [8:4];   //5 set bits in address
  wire [1:0]  req_wrdOffset = i_req_addr [3:2];   //2 bits for word offset for 16-byte blocks 
+ wire hit;
+
+//check if valid bit is set & if tag matches request 
+ wire Line0_hit = valid[req_index][0] && (tags0[req_index] == req_tag);
+ wire Line1_hit = valid[req_index][1] && (tags1[req_index] == req_tag);
+ assign hit = Line0_hit || Line1_hit;
+
+ always @(posedge i_clk or posedge i_rst) begin
+    if (i_rst) begin
+        state <= IDLE;
+        o_busy <= 0;
+    end else begin
+        state <= next_state;
+    end
+ end
 
 
  typedef enum reg [1:0] {IDLE,MEMREAD,MEMWRITE } state_t;
  state_t state, next_state;
-
  
  always @(posedge i_clk or posedge i_rst) begin
     if (i_rst) begin
