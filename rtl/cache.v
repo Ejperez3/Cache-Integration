@@ -171,6 +171,12 @@ module cache (
         end
       end
       MEMREAD: begin
+        //stay in memread as long as i_mem_ready is false?
+        if(~i_mem_rdata)begin
+          next_state=MEMREAD;
+        end
+
+
         busy1 = 1'b1;
       end
 
