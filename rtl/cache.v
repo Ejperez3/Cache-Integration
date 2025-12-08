@@ -95,12 +95,12 @@ module cache (
   // arrays as you please.
 
   // Backing memory, modeled as two separate ways.
-  reg [   31:0] datas0 [DEPTH - 1:0][D - 1:0];   //stores first line in set   (32 lines x 4 words per line)
-  reg [31:0] datas1[DEPTH - 1:0][D - 1:0];  //stores second line in set 
+  reg [   31:0] datas0[DEPTH - 1:0][D - 1:0];   //stores first line in set   (32 lines x 4 words per line)
+  reg [   31:0] datas1[DEPTH - 1:0][D - 1:0];  //stores second line in set 
   reg [T - 1:0] tags0[DEPTH - 1:0];  //stores tag from first line in set
   reg [T - 1:0] tags1[DEPTH - 1:0];  //stores tag from second line in set
-  reg [1:0] valid[DEPTH - 1:0];  //2-bit valid (one for each line in set)
-  reg lru[DEPTH - 1:0];  //bit to track lru
+  reg [1:0] valid [DEPTH - 1:0];  //2-bit valid (one for each line in set)
+  reg       lru   [DEPTH - 1:0];  //bit to track lru
 
   // Fill in your implementation here.
 
@@ -116,6 +116,14 @@ module cache (
   wire Line0_hit = valid[req_index][0] && (tags0[req_index] == req_tag);
   wire Line1_hit = valid[req_index][1] && (tags1[req_index] == req_tag);
   assign hit = Line0_hit || Line1_hit;
+
+  
+  //FSM STATES
+  localparam IDLE    = 2'b00;
+  localparam MEMREAD = 2'b01;
+  localparam MEMWRITE= 2'b10;
+  reg [1:0] state;
+  reg [1:0] next_state;
 
   always @(posedge i_clk or posedge i_rst) begin
     if (i_rst) begin
@@ -158,12 +166,8 @@ module cache (
 
   reg [1:0] mem_add_read;
 
-  typedef enum reg [1:0] {
-    IDLE,
-    MEMREAD,
-    MEMWRITE
-  } state_t;
-  state_t state, next_state;
+
+
   //2 registers to keep track of what the request-signal type was
   reg i_req_wen_ff;
   reg i_req_ren_ff;
