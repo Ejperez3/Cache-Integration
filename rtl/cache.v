@@ -89,6 +89,8 @@ module cache (
   assign o_mem_wen_reg = o_mem_wen_reg;
   reg [31:0] o_mem_wdata_reg;
   assign o_mem_wdata = o_mem_wdata_reg;
+  reg busy1;
+  assign o_busy = busy1;
 
   // The following memory arrays model the cache structure. As this is
   // an internal implementation detail, you are *free* to modify these
@@ -125,6 +127,7 @@ module cache (
   reg [1:0] state;
   reg [1:0] next_state;
 
+  //fsm state transition
   always @(posedge i_clk or posedge i_rst) begin
     if (i_rst) begin
       state  <= IDLE;
@@ -146,8 +149,9 @@ module cache (
   //a hit: if hit, combinational read from the cache. 
 
 
+  ///////////RESET LOGIC
   integer i, x;
-  always @(posedge i_clk or posedge i_rst) begin
+  always @(posedge i_clk) begin
     if (i_rst) begin
       for (i = 0; i < 32; i = i + 1) begin
         valid[i] <= 2'd0;
@@ -159,8 +163,6 @@ module cache (
           datas1[i][x] <= 32'b0;
         end
       end
-    end else begin
-
     end
   end
 
@@ -172,14 +174,12 @@ module cache (
   reg i_req_wen_ff;
   reg i_req_ren_ff;
 
+  //set which kind of request
   always @(posedge i_clk or posedge i_rst) begin
     if (i_rst) begin
-      state <= IDLE;
-      busy1 <= 0;
       i_req_wen_ff <= 1'b0;
       i_req_ren_ff <= 1'b0;
     end else begin
-      state <= next_state;
       if (state == IDLE) begin
         i_req_wen_ff <= i_req_wen;
         i_req_ren_ff <= i_req_ren;
@@ -192,7 +192,7 @@ module cache (
   //for the block 
   //the data to load from memory via offset should be given by this
   wire [31:0] o_req_addr_offset;
-  reg 
+
   assign o_req_addr_offset = i_req_addr + {28'b0, mem_add_read};
 
   //logic for loading 4 words of data on any read from memory
@@ -223,8 +223,6 @@ module cache (
       end
     end
   end
-
-  reg busy1;
 
   assign o_busy = busy1;
   //write signal to be set to 1 inside the state machine when in the write
