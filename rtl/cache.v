@@ -120,7 +120,7 @@ module cache (
   always @(posedge i_clk or posedge i_rst) begin
     if (i_rst) begin
       state  <= IDLE;
-      o_busy <= 0;
+      busy1 <= 0;
     end else begin
       state <= next_state;
     end
@@ -171,7 +171,7 @@ module cache (
   always @(posedge i_clk or posedge i_rst) begin
     if (i_rst) begin
       state <= IDLE;
-      o_busy <= 0;
+      busy1 <= 0;
       i_req_wen_ff <= 1'b0;
       i_req_ren_ff <= 1'b0;
     end else begin
@@ -188,6 +188,7 @@ module cache (
   //for the block 
   //the data to load from memory via offset should be given by this
   wire [31:0] o_req_addr_offset;
+  reg 
   assign o_req_addr_offset = i_req_addr + {28'b0, mem_add_read};
 
   //logic for loading 4 words of data on any read from memory
@@ -197,12 +198,18 @@ module cache (
     end
     //if in any state other than MEMREAD, set mem_add_read to 0
     if (state != MEMREAD) begin
-      mem_add_read <= 1'b0;
+      mem_add_read <= 2'b0;
     end
     if (state == MEMREAD) begin
+      //might need seperate state machine that goes 
+      // i_mem_ready (can accept a value) -> i_mem_valid (finally fetched
+      // value)-> i_mem_ready (can accept a value) etc 
       //if the current state is MEMREAD AND the value being shown by memory
       //is valid, then load it into the cache
       //increment the mem_add_read
+      //
+      //NOTE: is this i_mem_valid? only read the value being shown by memory
+      //if its valid?
       if (i_mem_ready) begin
         //TODO: logic for loading the specific word into the specific block 
         //in the cache?
