@@ -126,24 +126,37 @@ module cache (
     end
   end
 
+  //Basic recap of cache organization
+  //32 sets, 2 way associative with each block having 4 words
+  //2 bits of the address are required to access each word, word aligned hence
+  //add[3:2]
+  //2 way associative implies that each set can hold 2 blocks of data
+  //32 sets, hence 5 bits required to index this, or add[8:4]
+  //rest of the bits are used for tag-inspection, given by [31:9]
+  //
+  //When a request is sent by the CPI via i_req_wen or i_req_ren, check if its
+  //a hit: if hit, combinational read from the cache. 
 
- integer i, x;
- always @(posedge i_clk or posedge i_rst) begin
+
+  integer i, x;
+  always @(posedge i_clk or posedge i_rst) begin
     if (i_rst) begin
-        for(i = 0; i < 32; i = i+1) begin 
-            valid[i] <= 2'd0;
-            tags0[i] <= 23'd0;
-            tags1[i] <= 23'd0;
-            lru[i] <= 1'd0; 
-            for(x = 0; x<4; x = x+1) begin
-                datas0[i][x] <= 32'b0;
-                datas1[i][x] <= 32'b0;
-            end
-        end 
+      for (i = 0; i < 32; i = i + 1) begin
+        valid[i] <= 2'd0;
+        tags0[i] <= 23'd0;
+        tags1[i] <= 23'd0;
+        lru[i]   <= 1'd0;
+        for (x = 0; x < 4; x = x + 1) begin
+          datas0[i][x] <= 32'b0;
+          datas1[i][x] <= 32'b0;
+        end
+      end
     end else begin
 
     end
- end
+  end
+
+  reg [1:0] mem_add_read;
 
   typedef enum reg [1:0] {
     IDLE,
@@ -170,7 +183,38 @@ module cache (
     end
   end
 
+  //LOGIC FOR FETCHING LINES FROM MEMORY IN MEMREAD STATE
+  //if currently in the MEMREAD state, attempt to sequentially read addresses
+  //for the block 
+  //the data to load from memory via offset should be given by this
+  wire [31:0] o_req_addr_offset;
+  assign o_req_addr_offset = i_req_addr + {28'b0, mem_add_read};
+
+  //logic for loading 4 words of data on any read from memory
+  always @(posedge i_clk or posedge i_rst) begin
+    if (i_rst) begin
+      mem_add_read <= 2'b0;
+    end
+    //if in any state other than MEMREAD, set mem_add_read to 0
+    if (state != MEMREAD) begin
+      mem_add_read <= 1'b0;
+    end
+    if (state == MEMREAD) begin
+      //if the current state is MEMREAD AND the value being shown by memory
+      //is valid, then load it into the cache
+      //increment the mem_add_read
+      if (i_mem_ready) begin
+        //TODO: logic for loading the specific word into the specific block 
+        //in the cache?
+        //recall that writing to a cache is sequential, hence should be in
+        //a sequential block
+        mem_add_read <= mem_add_read + 1;
+      end
+    end
+  end
+
   reg busy1;
+
   assign o_busy = busy1;
   //write signal to be set to 1 inside the state machine when in the write
   //state
@@ -180,35 +224,61 @@ module cache (
     busy1 = 1'b0;
     case (state)
       IDLE: begin
-        //if hit, remain in the IDLE state
-        //otherwise, transition into memread state
+        //if the CPU requests a write (i_req_wen) or a read (i_req_ren), AND
+        //it doesn't hit, then needs to read from the main memory
+        //NOTE: to read 4 sequential adresses in memory, needs a seperate
+        //state?
+        //might be easier if there are additional states
         if ((i_req_wen || i_req_ren) && ~hit) begin
           next_state = MEMREAD;
           busy1 = 1'b1;
         end
+
+        //if write and hit, skip loading block into memory, go directly to
+        //writing to both memory and cache
+        if(hit && i_req_wen)begin
+          next_state=MEMWRITE;
+          busy1=1'b1;
+        end
       end
+
       MEMREAD: begin
         //stay in memread as long as i_mem_ready is false?
-        if(~i_mem_rdata)begin
-          next_state=MEMREAD;
+        //NOTE: once you've read the final line (i.e, mem_add_read becomes
+        //3 or 4 depending on indexing method, then transition to the next
+        //state; you've finished reading the 4 blocks of data you need into
+        //the cache)
+        //
+        //should transition out of MEMREAD once 4 words of data have been read
+        //from the memory to the cache: i.e, once mem_add_read has reached
+        //3 (or 4?)...
+        //CASE i_req_ren_ff; during the request, it was simply a read; can
+        //transition back to the idle state?
+        //CASE i_req_wen_ff; recall that for a write
+        //a) if miss, load block into memory, then write to both cache and
+        //memory
+        //b) if hit, write to both cache and memory. tbh idk how this would
+        //really work
+        busy1 = 1'b1;
+        if (~i_mem_rdata) begin
+          next_state = MEMREAD;
         end
-
-
+        else if(i_req_ren_ff)begin
+          next_state=IDLE;
+        end
+        else if(i_req_ren_ff)begin
+          next_state=MEMWRITE;
+        end
         busy1 = 1'b1;
       end
 
       MEMWRITE: begin
         busy1 = 1'b1;
-
       end
     endcase
   end
-
-
 endmodule
-
 `default_nettype wire
-
 //are request signals only present for one clk cycle ? 
 
 //IDLE  --> MEMREAD --> 
@@ -219,7 +289,3 @@ endmodule
 //if not a hit always read memory (new state) (done for read)
 
 //for write need to write back to memory 3rd state ? 
-
-
-
-
