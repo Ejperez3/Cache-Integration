@@ -131,7 +131,6 @@ module cache (
   always @(posedge i_clk) begin
     if (i_rst) begin
       state <= IDLE;
-      busy1 <= 0;
     end else begin
       state <= next_state;
     end
@@ -167,9 +166,6 @@ module cache (
   end
 
   reg [1:0] mem_add_read;
-
-
-
   //2 registers to keep track of what the request-signal type was
   reg i_req_wen_ff;
   reg i_req_ren_ff;
@@ -196,51 +192,22 @@ module cache (
   //cycle to include word wanted and the following three words
   assign o_req_addr_offset = i_req_addr + {28'b0, mem_add_read,2'b0};
   
-
   //logic for loading 4 words of data on any read from memory
   always @(posedge i_clk) begin
     if (i_rst) begin
       mem_add_read <= 2'b0;
     end
     //if in any state other than MEMREAD, set mem_add_read to 0
-    if (state != MEMREAD) begin
-      mem_add_read <= 2'b0;
-    end
     if (state == MEMREAD) begin
-      //might need seperate state machine that goes 
-      // i_mem_ready (can accept a value) -> i_mem_valid (finally fetched
-      // value)-> i_mem_ready (can accept a value) etc 
-      //if the current state is MEMREAD AND the value being shown by memory
-      //is valid, then load it into the cache
-      //increment the mem_add_read
-      //
-      //NOTE: is this i_mem_valid? only read the value being shown by memory
-      //if its valid?
-      //would i_mem_ready be false while memory is waiting/fetching?
-      //if the memory is not ready maintain the current address being
-      //presented to memory
-      //if the memory is NOT ready for a request, maintain the current address
-      //being presented to it
       if (~i_mem_ready) begin
         mem_add_read <= mem_add_read;
         o_mem_ren_reg <= 1'b0;
       end else begin 
         o_mem_addr_reg <= o_req_addr_offset;
         o_mem_ren_reg <= 1'b1;
-      end
-      //once memory IS ready, then present it the address. 
-      //NOTE, assumes that once it reads the address, i_mem_ready goes **LOW**
-      //and i_mem_valid goes **LOW**. 
+      end 
+      
       if (i_mem_valid) begin
-        //TODO: logic for loading the specific word into the specific block 
-        //in the cache?
-        //recall that writing to a cache is sequential, hence should be in
-        //a sequential block
-        //uses LRU policy, so...
-        //1) check if either way is empty, then allocate there
-        //2) if **both** ways are not-empty, evict the LRU
-
-        //if first line is empty
         if (~valid[req_index][0]) begin
           datas0[req_index][mem_add_read] <= i_mem_rdata;
           tags0[req_index] <= req_tag;
@@ -248,7 +215,6 @@ module cache (
             valid[req_index][0] <= 1'b1;
             lru[req_index] <= 1'b1;  //way 0 was just used, so way 1 is LRU
           end
-
         //second line is empty
         end else if (~valid[req_index][1]) begin
           datas1[req_index][mem_add_read] <= i_mem_rdata;
@@ -257,7 +223,6 @@ module cache (
             valid[req_index][1] <= 1'b1;
             lru[req_index] <= 1'b0;  //way 1 was just used, so way 0 is LRU
           end
-        
         //neither are empty, evict lru
         end else begin
           if (lru[req_index] == 1'b0) begin
@@ -266,21 +231,20 @@ module cache (
             if (mem_add_read == 2'd3) begin
               lru[req_index] <= 1'b1;  //way 0 was just used, so way 1 is LRU
             end
-
           end else begin
             datas1[req_index][mem_add_read] <= i_mem_rdata;
             tags1[req_index] <= req_tag;
             if (mem_add_read == 2'd3) begin
               lru[req_index] <= 1'b0;  //way 1 was just used, so way 0 is LRU
             end
-
           end
         end
-
         mem_add_read <= mem_add_read + 1;
       end
     end
   end
+
+
   //TODO: masked data
   //on reads, data outputted by the cache to the CPU needs to be masked by the
   //provided mask
@@ -304,6 +268,7 @@ module cache (
                               32'h00000000;
 
   assign Cache_masked_output_val = cache_word & mask32;   // set final data to output on cache hit                     
+  assign Mem_masked_output_val   = 
 
  //assign output data based on either cache masked value on hit or value read from memory on miss
   assign o_res_rdata = 
@@ -386,8 +351,8 @@ module cache (
     end
   end
 
-
  reg cache_Rhit; 
+ reg memRead_hit; 
   //write signal to be set to 1 inside the state machine when in the write
   //state
   always @(*) begin
@@ -395,47 +360,46 @@ module cache (
     next_state = state;
     busy1 = 1'b0;
     cache_Rhit = 1'b0;
+    memRead_hit = 1'b0; 
 
     case (state)
       IDLE: begin
-
-        if ((i_req_wen || i_req_ren) && ~hit) begin
+         
+        if ((i_req_wen || i_req_ren) && ~hit) begin //cache miss
           next_state = MEMREAD;
           busy1 = 1'b1;
         end
 
-        if(i_req_ren & hit)begin 
-          cache_Rhit = 1'b1; //cache read hit 
+        if(i_req_ren & hit)begin    //cache read hit 
+          cache_Rhit = 1'b1; 
         end 
 
-        if (hit && i_req_wen) begin
+        if (hit && i_req_wen) begin //cache write hit 
           next_state = MEMWRITE;
         end
 
       end
       MEMREAD: begin
+
         busy1 = 1'b1;
-        if (mem_add_read == 3'd3) begin
-          //once reading 4 words of data into the cache, if the initial
-          //request was a read, transition back to idle state?
+        if (mem_add_read == 3'd3) begin //after bringing in block we can leave this state 
           if (i_req_ren_ff) begin
+            memRead_hit = 1'b1; 
             next_state = IDLE;
-            //otherwise, if the initial request was a write, then transition
-            //to MEMWRITE state to write to both cache and memory?
+            busy1 = 1'b0;
           end else if (i_req_wen_ff) begin
             next_state = MEMWRITE;
+            busy1 = 1'b0;
           end
-          busy1 = 1'b1;
         end
       end
 
-      //given that the current state is MEMWRITE, need to write the contnet of 
-      //i_mem_rdata into both cache and memory
       MEMWRITE: begin
 
       end
     endcase
   end
+
 endmodule
 
 `default_nettype wire
