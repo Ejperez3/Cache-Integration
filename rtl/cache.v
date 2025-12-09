@@ -194,7 +194,7 @@ module cache (
   wire [31:0] o_req_addr_offset;
 
   //cycle to include word wanted and the following three words
-  assign o_req_addr_offset = i_req_addr + {28'b0, mem_add_read};
+  assign o_req_addr_offset = i_req_addr +{28'b0, mem_add_read, 2'b0};
   
 
   //logic for loading 4 words of data on any read from memory
@@ -223,6 +223,10 @@ module cache (
       //being presented to it
       if (~i_mem_ready) begin
         mem_add_read <= mem_add_read;
+        o_mem_ren_reg <= 1'b0;
+      end else begin 
+        o_mem_addr_reg <= o_req_addr_offset;
+        o_mem_ren_reg <= 1'b1;
       end
       //once memory IS ready, then present it the address. 
       //NOTE, assumes that once it reads the address, i_mem_ready goes **LOW**
@@ -235,6 +239,44 @@ module cache (
         //uses LRU policy, so...
         //1) check if either way is empty, then allocate there
         //2) if **both** ways are not-empty, evict the LRU
+
+        //if first line is empty
+        if (~valid[req_index][0]) begin
+          datas0[req_index][mem_add_read] <= i_mem_rdata;
+          tags0[req_index] <= req_tag;
+          if (mem_add_read == 2'd3) begin
+            valid[req_index][0] <= 1'b1;
+            lru[req_index] <= 1'b1;  //way 0 was just used, so way 1 is LRU
+          end
+
+        //second line is empty
+        end else if (~valid[req_index][1]) begin
+          datas1[req_index][mem_add_read] <= i_mem_rdata;
+          tags1[req_index] <= req_tag;
+          if (mem_add_read == 2'd3) begin
+            valid[req_index][1] <= 1'b1;
+            lru[req_index] <= 1'b0;  //way 1 was just used, so way 0 is LRU
+          end
+        
+        //neither are empty, evict lru
+        end else begin
+          if (lru[req_index] == 1'b0) begin
+            datas0[req_index][mem_add_read] <= i_mem_rdata;
+            tags0[req_index] <= req_tag;
+            if (mem_add_read == 2'd3) begin
+              lru[req_index] <= 1'b1;  //way 0 was just used, so way 1 is LRU
+            end
+
+          end else begin
+            datas1[req_index][mem_add_read] <= i_mem_rdata;
+            tags1[req_index] <= req_tag;
+            if (mem_add_read == 2'd3) begin
+              lru[req_index] <= 1'b0;  //way 1 was just used, so way 0 is LRU
+            end
+
+          end
+        end
+
         mem_add_read <= mem_add_read + 1;
       end
     end
