@@ -248,16 +248,14 @@ module cache (
   //TODO: masked data
   //on reads, data outputted by the cache to the CPU needs to be masked by the
   //provided mask
-  wire[31:0] Cache_masked_output_val; //assigned straight from cache used for hits (used for read request)
-  wire[31:0] Mem_masked_output_val;   //assigned from memory read when cache miss  (used for read request)
+   wire[31:0] Cache_masked_output_val; //assigned straight from cache used for hits (used for read request)
 
-  wire [31:0] cache_word =
+   wire [31:0] cache_word =
     Line0_hit ? datas0[req_index][req_wrdOffset] :
     Line1_hit ? datas1[req_index][req_wrdOffset] : 
     32'h0;
-
-  //set mask depending on recieved input 
-  wire [31:0] mask32 =
+   //set mask depending on recieved input 
+   wire [31:0] mask32 =
     (i_req_mask == 4'b1111) ? 32'hFFFFFFFF :
     (i_req_mask == 4'b0011) ? 32'h0000FFFF :
     (i_req_mask == 4'b1100) ? 32'hFFFF0000 :
@@ -391,7 +389,7 @@ module cache (
 
       end
 
-      MEMWRITE: begin
+      MEMWRITE: begin //once we hit this state we can assume block is cache (next update word based on mask and input data)
 
       end
     endcase
