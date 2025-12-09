@@ -267,16 +267,17 @@ module cache (
 
   assign Cache_masked_output_val = cache_word & mask32;   // set final data to output on cache hit                     
 
- //assign output data based on either cache masked value on hit or value read from memory on miss
-  assign o_res_rdata = (cache_Rhit) ? Cache_masked_output_val : 32'd0; 
-
 
  /*Logic for when in MemWrite stage */
- wire [31:0] Data2Write = cache_word 
+ wire [31:0] Data2Write = cache_word;
 
 
  reg cache_Rhit; 
  reg memRead_hit; 
+
+ //assign output data based on either cache masked value on hit or value read from memory on miss
+  assign o_res_rdata = (cache_Rhit) ? Cache_masked_output_val : 32'd0; 
+
   //write signal to be set to 1 inside the state machine when in the write
   //state
   always @(*) begin
