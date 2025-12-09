@@ -194,7 +194,7 @@ module cache (
   wire [31:0] o_req_addr_offset;
 
   //cycle to include word wanted and the following three words
-  assign o_req_addr_offset = i_req_addr + {26'b0, mem_add_read,2'b0};
+  assign o_req_addr_offset = i_req_addr + {28'b0, mem_add_read,2'b0};
   
 
   //logic for loading 4 words of data on any read from memory
@@ -281,6 +281,30 @@ module cache (
       end
     end
   end
+  //TODO: masked data
+  //on reads, data outputted by the cache to the CPU needs to be masked by the
+  //provided mask
+  wire[31:0] masked_output_val;
+
+  //logic for handling writing to both cache and memory
+  always@(posedge clk)begin
+    if(i_rst)begin
+    end
+    else begin
+      //if the current state is memwrite, write the contents of i_mem_rdata
+      //into both cache (assume has already fetched relavent block) AND into
+      //main memory
+      //
+      //main memory requires the signals 
+      //o_mem_addr: address to write to in main memory
+      //o_mem_wen: assert to tell memory "i need to write to you" or something
+      //o_mem_wdata: the data to write to memory
+      //i_req_mask: specifies which bits to actually write? 
+      //i_req_addr: 32 bit read/write ddress to access from the cache. 
+      if(state==MEMWRITE)begin
+      end
+    end
+  end
 
 
   //write signal to be set to 1 inside the state machine when in the write
@@ -343,7 +367,10 @@ module cache (
         end
       end
 
+      //given that the current state is MEMWRITE, need to write the contnet of 
+      //i_mem_rdata into both cache and memory
       MEMWRITE: begin
+
       end
     endcase
   end
