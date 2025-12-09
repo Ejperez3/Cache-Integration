@@ -128,7 +128,7 @@ module cache (
   reg [1:0] next_state;
 
   //fsm state transition
-  always @(posedge i_clk or posedge i_rst) begin
+  always @(posedge i_clk) begin
     if (i_rst) begin
       state  <= IDLE;
       busy1 <= 0;
@@ -175,7 +175,7 @@ module cache (
   reg i_req_ren_ff;
 
   //set which kind of request
-  always @(posedge i_clk or posedge i_rst) begin
+  always @(posedge i_clk) begin
     if (i_rst) begin
       i_req_wen_ff <= 1'b0;
       i_req_ren_ff <= 1'b0;
@@ -193,10 +193,12 @@ module cache (
   //the data to load from memory via offset should be given by this
   wire [31:0] o_req_addr_offset;
 
+  //cycle to include word wanted and the following three words
   assign o_req_addr_offset = i_req_addr + {28'b0, mem_add_read};
+  
 
   //logic for loading 4 words of data on any read from memory
-  always @(posedge i_clk or posedge i_rst) begin
+  always @(posedge i_clk) begin
     if (i_rst) begin
       mem_add_read <= 2'b0;
     end
@@ -224,7 +226,7 @@ module cache (
     end
   end
 
-  assign o_busy = busy1;
+
   //write signal to be set to 1 inside the state machine when in the write
   //state
   always @(*) begin
@@ -287,6 +289,7 @@ module cache (
     endcase
   end
 endmodule
+
 `default_nettype wire
 //are request signals only present for one clk cycle ? 
 
