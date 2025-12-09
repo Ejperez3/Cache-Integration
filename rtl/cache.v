@@ -270,80 +270,10 @@ module cache (
  //assign output data based on either cache masked value on hit or value read from memory on miss
   assign o_res_rdata = (cache_Rhit) ? Cache_masked_output_val : 32'd0; 
 
-  //logic for handling writing to both cache and memory
-  //register to keep track if the cache itself has been updated on a write
-  //given that writes can be done in paralell (i.e, waiting for memory to
-  //become "i_mem_ready", maintain state to know if cache has already been
-  //updated)
-  reg updated_cache;
-  always@(posedge clk)begin
-    if(i_rst)begin
-      updated_cache<=1'b0;
-    end
-    else begin
-      //if the current state is memwrite, write the contents of i_mem_rdata
-      //into both cache (assume has already fetched relavent block) AND into
-      //main memory
-      //
-      //main memory requires the signals 
-      //o_mem_addr: address to write to in main memory
-      //o_mem_wen: assert to tell memory "i need to write to you" or something
-      //o_mem_wdata: the data to write to memory
-      //i_req_mask: specifies which bits to actually write? 
-      //i_req_addr: 32 bit read/write ddress to access from the cache. 
-      //TODO: update this logic?
-      if(state==MEMWRITE)begin
-        //cache has not been updated yet
-        if(updated_cache==1'b0)begin
 
-        if (~valid[req_index][0]) begin
-          datas0[req_index][i_req_addr] <= i_mem_rdata;
-          tags0[req_index] <= req_tag;
-          if (i_req_addr == 2'd3) begin
-            valid[req_index][0] <= 1'b1;
-            lru[req_index] <= 1'b1;  //way 0 was just used, so way 1 is LRU
-          end
+ /*Logic for when in MemWrite stage */
+ wire [31:0] Data2Write = cache_word 
 
-        //second line is empty
-        end else if (~valid[req_index][1]) begin
-          datas1[req_index][i_req_addr] <= i_mem_rdata;
-          tags1[req_index] <= req_tag;
-          if (i_req_addr == 2'd3) begin
-            valid[req_index][1] <= 1'b1;
-            lru[req_index] <= 1'b0;  //way 1 was just used, so way 0 is LRU
-          end
-        
-        //neither are empty, evict lru
-        end else begin
-          if (lru[req_index] == 1'b0) begin
-            datas0[req_index][i_req_addr] <= i_mem_rdata;
-            tags0[req_index] <= req_tag;
-            if (i_req_addr == 2'd3) begin
-              lru[req_index] <= 1'b1;  //way 0 was just used, so way 1 is LRU
-            end
-
-          end else begin
-            datas1[req_index][i_req_addr] <= i_mem_rdata;
-            tags1[req_index] <= req_tag;
-            if (i_req_addr == 2'd3) begin
-              lru[req_index] <= 1'b0;  //way 1 was just used, so way 0 is LRU
-            end
-        end
-        //if the current state is MEMWRITE AND the memory is ready, assert
-        //o_mem_wen, 
-        if(i_mem_ready)begin
-          o_mem_wen_reg<=1'b1;
-          o_mem_wdata_reg<=i_mem_rdata;
-          o_mem_addr_reg<=i_req_addr;
-        end
-      end
-      else begin
-        //maintain the default valeus when it comes to writing to memory
-        updated_cache<=1'b0;
-        o_mem_wen_reg<=1'b0;
-      end
-    end
-  end
 
  reg cache_Rhit; 
  reg memRead_hit; 
