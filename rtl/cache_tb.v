@@ -92,7 +92,7 @@ module cache_tb ();
         reset_sequence;
 
         $display("Loading program.");
-        $readmemh("program.mem", mem.mem);
+        $readmemh("rand.mem", mem.mem);
 
         for (i = 0; i < DEPTH; i = i + 1) begin
 
