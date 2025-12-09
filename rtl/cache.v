@@ -119,7 +119,7 @@ module cache (
 
   always @(posedge i_clk or posedge i_rst) begin
     if (i_rst) begin
-      state  <= IDLE;
+      state <= IDLE;
       busy1 <= 0;
     end else begin
       state <= next_state;
@@ -188,7 +188,6 @@ module cache (
   //for the block 
   //the data to load from memory via offset should be given by this
   wire [31:0] o_req_addr_offset;
-  reg 
   assign o_req_addr_offset = i_req_addr + {28'b0, mem_add_read};
 
   //logic for loading 4 words of data on any read from memory
@@ -210,11 +209,25 @@ module cache (
       //
       //NOTE: is this i_mem_valid? only read the value being shown by memory
       //if its valid?
-      if (i_mem_ready) begin
+      //would i_mem_ready be false while memory is waiting/fetching?
+      //if the memory is not ready maintain the current address being
+      //presented to memory
+      //if the memory is NOT ready for a request, maintain the current address
+      //being presented to it
+      if (~i_mem_ready) begin
+        mem_add_read <= mem_add_read;
+      end
+      //once memory IS ready, then present it the address. 
+      //NOTE, assumes that once it reads the address, i_mem_ready goes **LOW**
+      //and i_mem_valid goes **LOW**. 
+      if (i_mem_valid) begin
         //TODO: logic for loading the specific word into the specific block 
         //in the cache?
         //recall that writing to a cache is sequential, hence should be in
         //a sequential block
+        //uses LRU policy, so...
+        //1) check if either way is empty, then allocate there
+        //2) if **both** ways are not-empty, evict the LRU
         mem_add_read <= mem_add_read + 1;
       end
     end
@@ -243,12 +256,11 @@ module cache (
 
         //if write and hit, skip loading block into memory, go directly to
         //writing to both memory and cache
-        if(hit && i_req_wen)begin
-          next_state=MEMWRITE;
-          busy1=1'b1;
+        if (hit && i_req_wen) begin
+          next_state = MEMWRITE;
+          busy1 = 1'b1;
         end
       end
-
       MEMREAD: begin
         //stay in memread as long as i_mem_ready is false?
         //NOTE: once you've read the final line (i.e, mem_add_read becomes
@@ -267,16 +279,23 @@ module cache (
         //b) if hit, write to both cache and memory. tbh idk how this would
         //really work
         busy1 = 1'b1;
-        if (~i_mem_rdata) begin
-          next_state = MEMREAD;
+        //after mem_add_read reaches 3, then should transition to next state
+        //add
+        //add+1
+        //add+2
+        //add+3
+        if (mem_add_read == 3'd3) begin
+          //once reading 4 words of data into the cache, if the initial
+          //request was a read, transition back to idle state?
+          if (i_req_ren_ff) begin
+            next_state = IDLE;
+            //otherwise, if the initial request was a write, then transition
+            //to MEMWRITE state to write to both cache and memory?
+          end else if (i_req_wen_ff) begin
+            next_state = MEMWRITE;
+          end
+          busy1 = 1'b1;
         end
-        else if(i_req_ren_ff)begin
-          next_state=IDLE;
-        end
-        else if(i_req_ren_ff)begin
-          next_state=MEMWRITE;
-        end
-        busy1 = 1'b1;
       end
 
       MEMWRITE: begin
