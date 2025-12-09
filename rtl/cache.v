@@ -206,7 +206,7 @@ module cache (
         o_mem_addr_reg <= o_req_addr_offset;
         o_mem_ren_reg <= 1'b1;
       end 
-      
+
       if (i_mem_valid) begin
         if (~valid[req_index][0]) begin
           datas0[req_index][mem_add_read] <= i_mem_rdata;
@@ -268,13 +268,9 @@ module cache (
                               32'h00000000;
 
   assign Cache_masked_output_val = cache_word & mask32;   // set final data to output on cache hit                     
-  assign Mem_masked_output_val   = 
 
  //assign output data based on either cache masked value on hit or value read from memory on miss
-  assign o_res_rdata = 
-                (cache_Rhit) ? Cache_masked_output_val : 
-                (memRead_hit)? Mem_masked_output_val   : 
-                32'd0; 
+  assign o_res_rdata = (cache_Rhit) ? Cache_masked_output_val : 32'd0; 
 
   //logic for handling writing to both cache and memory
   //register to keep track if the cache itself has been updated on a write
@@ -360,7 +356,6 @@ module cache (
     next_state = state;
     busy1 = 1'b0;
     cache_Rhit = 1'b0;
-    memRead_hit = 1'b0; 
 
     case (state)
       IDLE: begin
@@ -381,10 +376,11 @@ module cache (
       end
       MEMREAD: begin
 
-        busy1 = 1'b1;
+        busy1 = 1'b1; //stay busy while reading from memory 
+
         if (mem_add_read == 3'd3) begin //after bringing in block we can leave this state 
           if (i_req_ren_ff) begin
-            memRead_hit = 1'b1; 
+            cache_Rhit = 1'b1;    //data from mem read is ready in cache
             next_state = IDLE;
             busy1 = 1'b0;
           end else if (i_req_wen_ff) begin
@@ -392,6 +388,7 @@ module cache (
             busy1 = 1'b0;
           end
         end
+
       end
 
       MEMWRITE: begin
