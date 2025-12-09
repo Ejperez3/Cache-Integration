@@ -194,7 +194,7 @@ module cache (
   wire [31:0] o_req_addr_offset;
 
   //cycle to include word wanted and the following three words
-  assign o_req_addr_offset = i_req_addr +{28'b0, mem_add_read, 2'b0};
+  assign o_req_addr_offset = i_req_addr + {26'b0, mem_add_read,2'b0};
   
 
   //logic for loading 4 words of data on any read from memory
@@ -305,7 +305,6 @@ module cache (
         //writing to both memory and cache
         if (hit && i_req_wen) begin
           next_state = MEMWRITE;
-          busy1 = 1'b1;
         end
       end
       MEMREAD: begin
@@ -314,7 +313,6 @@ module cache (
         //3 or 4 depending on indexing method, then transition to the next
         //state; you've finished reading the 4 blocks of data you need into
         //the cache)
-        //
         //should transition out of MEMREAD once 4 words of data have been read
         //from the memory to the cache: i.e, once mem_add_read has reached
         //3 (or 4?)...
@@ -346,7 +344,6 @@ module cache (
       end
 
       MEMWRITE: begin
-        busy1 = 1'b1;
       end
     endcase
   end
