@@ -284,7 +284,27 @@ module cache (
   //TODO: masked data
   //on reads, data outputted by the cache to the CPU needs to be masked by the
   //provided mask
-  wire[31:0] masked_output_val;
+  wire[31:0] Cache_masked_output_val; //assigned straight from cache used for hits (used for read request)
+  wire[31:0] Mem_masked_output_val;   //assigned from memory read when cache miss  (used for read request)
+
+  wire [31:0] cache_word =
+    Line0_hit ? datas0[req_index][req_wrdOffset] :
+    Line1_hit ? datas1[req_index][req_wrdOffset] : 
+    32'h0;
+
+  //set mask depending on recieved input 
+  wire [31:0] mask32 =
+    (i_req_mask == 4'b1111) ? 32'hFFFFFFFF :
+    (i_req_mask == 4'b0011) ? 32'h0000FFFF :
+    (i_req_mask == 4'b1100) ? 32'hFFFF0000 :
+    (i_req_mask == 4'b0001) ? 32'h000000FF :
+    (i_req_mask == 4'b0010) ? 32'h0000FF00 :
+    (i_req_mask == 4'b0100) ? 32'h00FF0000 :
+    (i_req_mask == 4'b1000) ? 32'hFF000000 :
+                              32'h00000000;
+
+  assign Cache_masked_output_val = cache_word & mask32;   // set final data to output on cache hit                     
+
 
   //logic for handling writing to both cache and memory
   //register to keep track if the cache itself has been updated on a write
@@ -362,6 +382,7 @@ module cache (
   end
 
 
+ reg cache_Rhit; 
   //write signal to be set to 1 inside the state machine when in the write
   //state
   always @(*) begin
@@ -380,11 +401,16 @@ module cache (
           busy1 = 1'b1;
         end
 
+        if(i_req_ren & hit)begin 
+          cache_Rhit = 1; //cache read hit 
+        end 
+
         //if write and hit, skip loading block into memory, go directly to
         //writing to both memory and cache
         if (hit && i_req_wen) begin
           next_state = MEMWRITE;
         end
+
       end
       MEMREAD: begin
         //stay in memread as long as i_mem_ready is false?
