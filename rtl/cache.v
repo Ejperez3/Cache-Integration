@@ -119,7 +119,9 @@ module cache (
   wire Line1_hit = valid[req_index][1] && (tags1[req_index] == req_tag);
   assign hit = Line0_hit || Line1_hit;
 
-  
+ reg cache_Rhit;
+ reg ready2write; 
+
   //FSM STATES
   localparam IDLE    = 2'b00;
   localparam MEMREAD = 2'b01;
@@ -269,14 +271,39 @@ module cache (
 
 
  /*Logic for when in MemWrite stage */
- wire [31:0] Data2Write = cache_word;
+ // when in MemWrite correct block is already in cache 
+ // manipulate data 
+ // write to cache 
+ // write to memory 
+
+ wire [31:0] Data2Write = (cache_word & ~mask32) | (i_req_wdata & mask32); //this should setup data to write to cache and memory
 
 
- reg cache_Rhit; 
- reg memRead_hit; 
+ always @(posedge i_clk) begin
 
- //assign output data based on either cache masked value on hit or value read from memory on miss
-  assign o_res_rdata = (cache_Rhit) ? Cache_masked_output_val : 32'd0; 
+  if(state == MEMWRITE)begin 
+
+    if(ready2write)begin 
+      if(Line0_hit)begin
+        datas0[req_index][req_wrdOffset] <= Data2Write;
+        lru[req_index] <= 1'b1; //way 0 just used so way1 is LRU
+      end 
+
+      if(Line1_hit)begin 
+        datas1[req_index][req_wrdOffset] <= Data2Write;
+        lru[req_index] <= 1'b0; //way 1 just used so way0 is LRU
+      end 
+
+      o_mem_wdata_reg <= Data2Write;
+      o_mem_wen_reg   <= 1'b1; 
+      o_mem_addr_reg  <= i_req_addr; 
+
+    end 
+  end 
+ end 
+
+
+
 
   //write signal to be set to 1 inside the state machine when in the write
   //state
@@ -285,6 +312,7 @@ module cache (
     next_state = state;
     busy1 = 1'b0;
     cache_Rhit = 1'b0;
+    ready2write = 1'b0; 
 
     case (state)
       IDLE: begin
@@ -314,15 +342,20 @@ module cache (
             busy1 = 1'b0;
           end else if (i_req_wen_ff) begin
             next_state = MEMWRITE;
-            busy1 = 1'b0;
+            
           end
         end
-
       end
 
       MEMWRITE: begin //once we hit this state we can assume block is cache (next update word based on mask and input data)
-
+        busy1 = 1'b1;  //hold busy to keep inputs stable 
+       if(i_mem_ready)begin 
+        ready2write = 1'b1; 
+        busy1 = 1'b0;
+        next_state = IDLE;
+       end 
       end
+
     endcase
   end
 
