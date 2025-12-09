@@ -305,6 +305,11 @@ module cache (
 
   assign Cache_masked_output_val = cache_word & mask32;   // set final data to output on cache hit                     
 
+ //assign output data based on either cache masked value on hit or value read from memory on miss
+  assign o_res_rdata = 
+                (cache_Rhit) ? Cache_masked_output_val : 
+                (memRead_hit)? Mem_masked_output_val   : 
+                32'd0; 
 
   //logic for handling writing to both cache and memory
   //register to keep track if the cache itself has been updated on a write
@@ -389,51 +394,27 @@ module cache (
     //default values
     next_state = state;
     busy1 = 1'b0;
+    cache_Rhit = 1'b0;
+
     case (state)
       IDLE: begin
-        //if the CPU requests a write (i_req_wen) or a read (i_req_ren), AND
-        //it doesn't hit, then needs to read from the main memory
-        //NOTE: to read 4 sequential adresses in memory, needs a seperate
-        //state?
-        //might be easier if there are additional states
+
         if ((i_req_wen || i_req_ren) && ~hit) begin
           next_state = MEMREAD;
           busy1 = 1'b1;
         end
 
         if(i_req_ren & hit)begin 
-          cache_Rhit = 1; //cache read hit 
+          cache_Rhit = 1'b1; //cache read hit 
         end 
 
-        //if write and hit, skip loading block into memory, go directly to
-        //writing to both memory and cache
         if (hit && i_req_wen) begin
           next_state = MEMWRITE;
         end
 
       end
       MEMREAD: begin
-        //stay in memread as long as i_mem_ready is false?
-        //NOTE: once you've read the final line (i.e, mem_add_read becomes
-        //3 or 4 depending on indexing method, then transition to the next
-        //state; you've finished reading the 4 blocks of data you need into
-        //the cache)
-        //should transition out of MEMREAD once 4 words of data have been read
-        //from the memory to the cache: i.e, once mem_add_read has reached
-        //3 (or 4?)...
-        //CASE i_req_ren_ff; during the request, it was simply a read; can
-        //transition back to the idle state?
-        //CASE i_req_wen_ff; recall that for a write
-        //a) if miss, load block into memory, then write to both cache and
-        //memory
-        //b) if hit, write to both cache and memory. tbh idk how this would
-        //really work
         busy1 = 1'b1;
-        //after mem_add_read reaches 3, then should transition to next state
-        //add
-        //add+1
-        //add+2
-        //add+3
         if (mem_add_read == 3'd3) begin
           //once reading 4 words of data into the cache, if the initial
           //request was a read, transition back to idle state?
@@ -458,13 +439,4 @@ module cache (
 endmodule
 
 `default_nettype wire
-//are request signals only present for one clk cycle ? 
 
-//IDLE  --> MEMREAD --> 
-
-//IDLE check request if hit complete in 1 cycle (read and write)
-//Complete write through in one also? what if mem not ready ? 
-
-//if not a hit always read memory (new state) (done for read)
-
-//for write need to write back to memory 3rd state ? 
