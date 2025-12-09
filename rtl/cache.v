@@ -89,18 +89,20 @@ module cache (
   assign o_mem_wen_reg = o_mem_wen_reg;
   reg [31:0] o_mem_wdata_reg;
   assign o_mem_wdata = o_mem_wdata_reg;
+  reg busy1;
+  assign o_busy = busy1;
 
   // The following memory arrays model the cache structure. As this is
   // an internal implementation detail, you are *free* to modify these
   // arrays as you please.
 
   // Backing memory, modeled as two separate ways.
-  reg [   31:0] datas0 [DEPTH - 1:0][D - 1:0];   //stores first line in set   (32 lines x 4 words per line)
-  reg [31:0] datas1[DEPTH - 1:0][D - 1:0];  //stores second line in set 
+  reg [   31:0] datas0[DEPTH - 1:0][D - 1:0];   //stores first line in set   (32 lines x 4 words per line)
+  reg [   31:0] datas1[DEPTH - 1:0][D - 1:0];  //stores second line in set 
   reg [T - 1:0] tags0[DEPTH - 1:0];  //stores tag from first line in set
   reg [T - 1:0] tags1[DEPTH - 1:0];  //stores tag from second line in set
-  reg [1:0] valid[DEPTH - 1:0];  //2-bit valid (one for each line in set)
-  reg lru[DEPTH - 1:0];  //bit to track lru
+  reg [1:0] valid [DEPTH - 1:0];  //2-bit valid (one for each line in set)
+  reg       lru   [DEPTH - 1:0];  //bit to track lru
 
   // Fill in your implementation here.
 
@@ -117,7 +119,16 @@ module cache (
   wire Line1_hit = valid[req_index][1] && (tags1[req_index] == req_tag);
   assign hit = Line0_hit || Line1_hit;
 
-  always @(posedge i_clk or posedge i_rst) begin
+  
+  //FSM STATES
+  localparam IDLE    = 2'b00;
+  localparam MEMREAD = 2'b01;
+  localparam MEMWRITE= 2'b10;
+  reg [1:0] state;
+  reg [1:0] next_state;
+
+  //fsm state transition
+  always @(posedge i_clk) begin
     if (i_rst) begin
       state <= IDLE;
       busy1 <= 0;
@@ -138,8 +149,9 @@ module cache (
   //a hit: if hit, combinational read from the cache. 
 
 
+  ///////////RESET LOGIC
   integer i, x;
-  always @(posedge i_clk or posedge i_rst) begin
+  always @(posedge i_clk) begin
     if (i_rst) begin
       for (i = 0; i < 32; i = i + 1) begin
         valid[i] <= 2'd0;
@@ -151,31 +163,23 @@ module cache (
           datas1[i][x] <= 32'b0;
         end
       end
-    end else begin
-
     end
   end
 
   reg [1:0] mem_add_read;
 
-  typedef enum reg [1:0] {
-    IDLE,
-    MEMREAD,
-    MEMWRITE
-  } state_t;
-  state_t state, next_state;
+
+
   //2 registers to keep track of what the request-signal type was
   reg i_req_wen_ff;
   reg i_req_ren_ff;
 
-  always @(posedge i_clk or posedge i_rst) begin
+  //set which kind of request
+  always @(posedge i_clk) begin
     if (i_rst) begin
-      state <= IDLE;
-      busy1 <= 0;
       i_req_wen_ff <= 1'b0;
       i_req_ren_ff <= 1'b0;
     end else begin
-      state <= next_state;
       if (state == IDLE) begin
         i_req_wen_ff <= i_req_wen;
         i_req_ren_ff <= i_req_ren;
@@ -188,10 +192,13 @@ module cache (
   //for the block 
   //the data to load from memory via offset should be given by this
   wire [31:0] o_req_addr_offset;
+
+  //cycle to include word wanted and the following three words
   assign o_req_addr_offset = i_req_addr + {28'b0, mem_add_read};
+  
 
   //logic for loading 4 words of data on any read from memory
-  always @(posedge i_clk or posedge i_rst) begin
+  always @(posedge i_clk) begin
     if (i_rst) begin
       mem_add_read <= 2'b0;
     end
@@ -233,9 +240,7 @@ module cache (
     end
   end
 
-  reg busy1;
 
-  assign o_busy = busy1;
   //write signal to be set to 1 inside the state machine when in the write
   //state
   always @(*) begin
@@ -304,6 +309,7 @@ module cache (
     endcase
   end
 endmodule
+
 `default_nettype wire
 //are request signals only present for one clk cycle ? 
 
