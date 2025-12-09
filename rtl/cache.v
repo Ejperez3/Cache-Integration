@@ -351,7 +351,6 @@ module cache (
         busy1 = 1'b1;  //hold busy to keep inputs stable 
        if(i_mem_ready)begin 
         ready2write = 1'b1; 
-        busy1 = 1'b0;
         next_state = IDLE;
        end 
       end
