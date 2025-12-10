@@ -199,8 +199,10 @@ module cache (
   assign o_mem_ren=(state==MEMREAD)?1'b1:1'b0;
   
   //logic for loading 4 words of data on any read from memory
+  reg[1:0] block_offset;
   always @(posedge i_clk) begin
     if (i_rst) begin
+      block_offset<=2'b0;
       mem_add_read <= 2'b0;
     end
     //if in any state other than MEMREAD, set mem_add_read to 0
@@ -209,39 +211,39 @@ module cache (
         mem_add_read <= mem_add_read;
         o_mem_ren_reg <= 1'b0;
       end else begin 
-        //o_mem_addr_reg <= o_req_addr_offset;
+        mem_add_read <= mem_add_read + 1;
         o_mem_ren_reg <= 1'b1;
       end 
 
       if (i_mem_valid) begin
-        mem_add_read <= mem_add_read + 1;
+        block_offset<=block_offset+1;
         if (~valid[req_index][0]) begin
-          datas0[req_index][mem_add_read] <= i_mem_rdata;
+          datas0[req_index][block_offset] <= i_mem_rdata;
           tags0[req_index] <= req_tag;
-          if (mem_add_read == 2'd3) begin
+          if (block_offset == 2'd3) begin
             valid[req_index][0] <= 1'b1;
             lru[req_index] <= 1'b1;  //way 0 was just used, so way 1 is LRU
           end
         //second line is empty
         end else if (~valid[req_index][1]) begin
-          datas1[req_index][mem_add_read] <= i_mem_rdata;
+          datas1[req_index][block_offset] <= i_mem_rdata;
           tags1[req_index] <= req_tag;
-          if (mem_add_read == 2'd3) begin
+          if (block_offset == 2'd3) begin
             valid[req_index][1] <= 1'b1;
             lru[req_index] <= 1'b0;  //way 1 was just used, so way 0 is LRU
           end
         //neither are empty, evict lru
         end else begin
           if (lru[req_index] == 1'b0) begin
-            datas0[req_index][mem_add_read] <= i_mem_rdata;
+            datas0[req_index][block_offset] <= i_mem_rdata;
             tags0[req_index] <= req_tag;
-            if (mem_add_read == 2'd3) begin
+            if (block_offset == 2'd3) begin
               lru[req_index] <= 1'b1;  //way 0 was just used, so way 1 is LRU
             end
           end else begin
-            datas1[req_index][mem_add_read] <= i_mem_rdata;
+            datas1[req_index][block_offset] <= i_mem_rdata;
             tags1[req_index] <= req_tag;
-            if (mem_add_read == 2'd3) begin
+            if (block_offset == 2'd3) begin
               lru[req_index] <= 1'b0;  //way 1 was just used, so way 0 is LRU
             end
           end
@@ -340,12 +342,12 @@ module cache (
 
         busy1 = 1'b1; //stay busy while reading from memory 
 
-        if (mem_add_read == 3'd3) begin //after bringing in block we can leave this state 
-          if (i_req_ren_ff) begin
+        if (block_offset == 3'd3) begin //after bringing in block we can leave this state 
+          if (i_req_ren_ff && i_mem_valid) begin
             cache_Rhit = 1'b1;    //data from mem read is ready in cache
             next_state = IDLE;
             busy1 = 1'b0;
-          end else if (i_req_wen_ff) begin
+          end else if (i_req_wen_ff && i_mem_valid) begin
             next_state = MEMWRITE;
             
           end
