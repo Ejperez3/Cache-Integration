@@ -1,3 +1,5 @@
+/////////THIS USED A LOT OF AI SO IDK WHATS GOOD OR NOT
+
 `default_nettype none
 
 module cache (
