@@ -5,3 +5,4 @@ project6.cr.mti
 .github/*
 cache.vcd
 vsim.wlf
+rtl/work/*
