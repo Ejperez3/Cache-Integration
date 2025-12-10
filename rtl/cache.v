@@ -82,9 +82,9 @@ module cache (
 
   //reg versions of the outputs of the module 
   reg [31:0] o_mem_addr_reg;
-  assign o_mem_addr = o_mem_addr_reg;
+  //assign o_mem_addr = o_mem_addr_reg;
   reg o_mem_ren_reg;
-  assign o_mem_ren = o_mem_ren_reg;
+//  assign o_mem_ren = o_mem_ren_reg;
   reg o_mem_wen_reg;
   assign o_mem_wen = o_mem_wen_reg;
   reg [31:0] o_mem_wdata_reg;
@@ -193,6 +193,10 @@ module cache (
 
   //cycle to include word wanted and the following three words
   assign o_req_addr_offset = i_req_addr + {28'b0, mem_add_read,2'b0};
+  assign o_mem_addr=(state==MEMREAD)? o_req_addr_offset:
+    (state==MEMWRITE)? i_req_addr:
+    32'b0;
+  assign o_mem_ren=(state==MEMREAD)?1'b1:1'b0;
   
   //logic for loading 4 words of data on any read from memory
   always @(posedge i_clk) begin
@@ -205,12 +209,12 @@ module cache (
         mem_add_read <= mem_add_read;
         o_mem_ren_reg <= 1'b0;
       end else begin 
-        o_mem_addr_reg <= o_req_addr_offset;
+        //o_mem_addr_reg <= o_req_addr_offset;
         o_mem_ren_reg <= 1'b1;
-        mem_add_read <= mem_add_read + 1;
       end 
 
       if (i_mem_valid) begin
+        mem_add_read <= mem_add_read + 1;
         if (~valid[req_index][0]) begin
           datas0[req_index][mem_add_read] <= i_mem_rdata;
           tags0[req_index] <= req_tag;
@@ -297,7 +301,7 @@ module cache (
 
       o_mem_wdata_reg <= Data2Write;
       o_mem_wen_reg   <= 1'b1; 
-      o_mem_addr_reg  <= i_req_addr; 
+      //o_mem_addr_reg  <= i_req_addr; 
 
     end 
   end 
