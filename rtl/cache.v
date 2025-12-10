@@ -325,22 +325,24 @@ module cache (
     case (state)
       IDLE: begin
          
+        cache_Rhit=1'b1;
         if ((i_req_wen || i_req_ren) && ~hit) begin //cache miss
           next_state = MEMREAD;
           busy1 = 1'b1;
+          cache_Rhit=1'b0;
         end
 
         if(i_req_ren & hit)begin    //cache read hit 
-          cache_Rhit = 1'b1; 
+          cache_Rhit=1'b1;
         end 
 
         if (hit && i_req_wen) begin //cache write hit 
           next_state = MEMWRITE;
+          cache_Rhit=1'b0;
         end
 
       end
       MEMREAD: begin
-
         busy1 = 1'b1; //stay busy while reading from memory 
 
         if (block_offset == 3'd3) begin //after bringing in block we can leave this state 
@@ -349,17 +351,21 @@ module cache (
             next_state = OUT_DATA;
           end else if (i_req_wen_ff && i_mem_valid) begin
             next_state = MEMWRITE;
-            
           end
         end
       end
+
       OUT_DATA:begin
         cache_Rhit=1'b1;
         next_state=IDLE;
       end
 
       MEMWRITE: begin //once we hit this state we can assume block is cache (next update word based on mask and input data)
+      //if its a hit, busy1=0
         busy1 = 1'b1;  //hold busy to keep inputs stable 
+        if(Line0_hit || Line1_hit)begin
+          busy1=1'b0;
+        end
        if(i_mem_ready)begin 
         ready2write = 1'b1; 
         next_state = IDLE;
