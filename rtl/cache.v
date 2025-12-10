@@ -269,6 +269,7 @@ module cache (
 
   assign Cache_masked_output_val = cache_word & mask32;   // set final data to output on cache hit                     
 
+  assign o_res_rdata = (cache_Rhit)? Cache_masked_output_val : 32'b0; 
 
  /*Logic for when in MemWrite stage */
  // when in MemWrite correct block is already in cache 
