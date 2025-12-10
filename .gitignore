@@ -3,3 +3,5 @@ project6.mpf
 transcript
 project6.cr.mti
 .github/*
+cache.vcd
+vsim.wlf
