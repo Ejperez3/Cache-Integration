@@ -126,6 +126,7 @@ module cache (
   localparam IDLE    = 2'b00;
   localparam MEMREAD = 2'b01;
   localparam MEMWRITE= 2'b10;
+  localparam OUT_DATA=2'b11;
   reg [1:0] state;
   reg [1:0] next_state;
 
@@ -345,13 +346,16 @@ module cache (
         if (block_offset == 3'd3) begin //after bringing in block we can leave this state 
           if (i_req_ren_ff && i_mem_valid) begin
             cache_Rhit = 1'b1;    //data from mem read is ready in cache
-            next_state = IDLE;
-            busy1 = 1'b0;
+            next_state = OUT_DATA;
           end else if (i_req_wen_ff && i_mem_valid) begin
             next_state = MEMWRITE;
             
           end
         end
+      end
+      OUT_DATA:begin
+        cache_Rhit=1'b1;
+        next_state=IDLE;
       end
 
       MEMWRITE: begin //once we hit this state we can assume block is cache (next update word based on mask and input data)
