@@ -288,6 +288,9 @@ module cache (
 
 
  always @(posedge i_clk) begin
+   if(state!=MEMWRITE)begin
+     o_mem_wen_reg<=1'b0;
+   end
 
   if(state == MEMWRITE)begin 
 

@@ -10,23 +10,23 @@ z2
 cModel Technology
 Z0 d/home/vedaant/school_files/fall2025/ECE552/proj6/Cache-Integration/rtl
 vcache
-Z1 !s110 1765343473
+Z1 !s110 1765407617
 !i10b 1
-!s100 _0=kXmPkE`3^m3TEM8GaF3
+!s100 [EVK7GnamaHl[<;8PF>ZV2
 Z2 !s11b Dg1SIo80bB@j0V0VzS_@n1
-IcmiF^6ENcY2BAFVRZ5nX:3
+I4QV0`@`nDXRJXl[GYaG5M1
 Z3 VDg1SIo80bB@j0V0VzS_@n1
 R0
-w1765343467
+w1765407614
 8cache.v
 Fcache.v
-!i122 29
-L0 3 376
+!i122 33
+L0 3 379
 Z4 OV;L;2020.1;71
 r1
 !s85 0
 31
-Z5 !s108 1765343473.000000
+Z5 !s108 1765407617.000000
 !s107 tb_memory.v|cache.v|cache_tb.v|
 Z6 !s90 cache_tb.v|cache.v|tb_memory.v|
 !i113 1
@@ -42,7 +42,7 @@ R0
 w1765332313
 8cache_tb.v
 Fcache_tb.v
-!i122 29
+!i122 33
 L0 1 219
 R4
 r1
@@ -64,7 +64,7 @@ R0
 w1765324682
 8tb_memory.v
 Ftb_memory.v
-!i122 29
+!i122 33
 L0 8 141
 R4
 r1
