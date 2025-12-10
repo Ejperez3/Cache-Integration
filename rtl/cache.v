@@ -207,6 +207,7 @@ module cache (
       end else begin 
         o_mem_addr_reg <= o_req_addr_offset;
         o_mem_ren_reg <= 1'b1;
+        mem_add_read <= mem_add_read + 1;
       end 
 
       if (i_mem_valid) begin
@@ -241,7 +242,6 @@ module cache (
             end
           end
         end
-        mem_add_read <= mem_add_read + 1;
       end
     end
   end
