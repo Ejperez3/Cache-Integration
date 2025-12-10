@@ -82,9 +82,9 @@ module cache (
 
   //reg versions of the outputs of the module 
   reg [31:0] o_mem_addr_reg;
-  assign o_mem_addr = o_mem_addr_reg;
+  //assign o_mem_addr = o_mem_addr_reg;
   reg o_mem_ren_reg;
-  assign o_mem_ren = o_mem_ren_reg;
+//  assign o_mem_ren = o_mem_ren_reg;
   reg o_mem_wen_reg;
   assign o_mem_wen = o_mem_wen_reg;
   reg [31:0] o_mem_wdata_reg;
@@ -126,6 +126,7 @@ module cache (
   localparam IDLE    = 2'b00;
   localparam MEMREAD = 2'b01;
   localparam MEMWRITE= 2'b10;
+  localparam OUT_DATA=2'b11;
   reg [1:0] state;
   reg [1:0] next_state;
 
@@ -193,10 +194,16 @@ module cache (
 
   //cycle to include word wanted and the following three words
   assign o_req_addr_offset = i_req_addr + {28'b0, mem_add_read,2'b0};
+  assign o_mem_addr=(state==MEMREAD)? o_req_addr_offset:
+    (state==MEMWRITE)? i_req_addr:
+    32'b0;
+  assign o_mem_ren=(state==MEMREAD)?1'b1:1'b0;
   
   //logic for loading 4 words of data on any read from memory
+  reg[1:0] block_offset;
   always @(posedge i_clk) begin
     if (i_rst) begin
+      block_offset<=2'b0;
       mem_add_read <= 2'b0;
     end
     //if in any state other than MEMREAD, set mem_add_read to 0
@@ -205,43 +212,43 @@ module cache (
         mem_add_read <= mem_add_read;
         o_mem_ren_reg <= 1'b0;
       end else begin 
-        o_mem_addr_reg <= o_req_addr_offset;
+        mem_add_read <= mem_add_read + 1;
         o_mem_ren_reg <= 1'b1;
       end 
 
       if (i_mem_valid) begin
+        block_offset<=block_offset+1;
         if (~valid[req_index][0]) begin
-          datas0[req_index][mem_add_read] <= i_mem_rdata;
+          datas0[req_index][block_offset] <= i_mem_rdata;
           tags0[req_index] <= req_tag;
-          if (mem_add_read == 2'd3) begin
+          if (block_offset == 2'd3) begin
             valid[req_index][0] <= 1'b1;
             lru[req_index] <= 1'b1;  //way 0 was just used, so way 1 is LRU
           end
         //second line is empty
         end else if (~valid[req_index][1]) begin
-          datas1[req_index][mem_add_read] <= i_mem_rdata;
+          datas1[req_index][block_offset] <= i_mem_rdata;
           tags1[req_index] <= req_tag;
-          if (mem_add_read == 2'd3) begin
+          if (block_offset == 2'd3) begin
             valid[req_index][1] <= 1'b1;
             lru[req_index] <= 1'b0;  //way 1 was just used, so way 0 is LRU
           end
         //neither are empty, evict lru
         end else begin
           if (lru[req_index] == 1'b0) begin
-            datas0[req_index][mem_add_read] <= i_mem_rdata;
+            datas0[req_index][block_offset] <= i_mem_rdata;
             tags0[req_index] <= req_tag;
-            if (mem_add_read == 2'd3) begin
+            if (block_offset == 2'd3) begin
               lru[req_index] <= 1'b1;  //way 0 was just used, so way 1 is LRU
             end
           end else begin
-            datas1[req_index][mem_add_read] <= i_mem_rdata;
+            datas1[req_index][block_offset] <= i_mem_rdata;
             tags1[req_index] <= req_tag;
-            if (mem_add_read == 2'd3) begin
+            if (block_offset == 2'd3) begin
               lru[req_index] <= 1'b0;  //way 1 was just used, so way 0 is LRU
             end
           end
         end
-        mem_add_read <= mem_add_read + 1;
       end
     end
   end
@@ -297,7 +304,7 @@ module cache (
 
       o_mem_wdata_reg <= Data2Write;
       o_mem_wen_reg   <= 1'b1; 
-      o_mem_addr_reg  <= i_req_addr; 
+      //o_mem_addr_reg  <= i_req_addr; 
 
     end 
   end 
@@ -336,16 +343,19 @@ module cache (
 
         busy1 = 1'b1; //stay busy while reading from memory 
 
-        if (mem_add_read == 3'd3) begin //after bringing in block we can leave this state 
-          if (i_req_ren_ff) begin
+        if (block_offset == 3'd3) begin //after bringing in block we can leave this state 
+          if (i_req_ren_ff && i_mem_valid) begin
             cache_Rhit = 1'b1;    //data from mem read is ready in cache
-            next_state = IDLE;
-            busy1 = 1'b0;
-          end else if (i_req_wen_ff) begin
+            next_state = OUT_DATA;
+          end else if (i_req_wen_ff && i_mem_valid) begin
             next_state = MEMWRITE;
             
           end
         end
+      end
+      OUT_DATA:begin
+        cache_Rhit=1'b1;
+        next_state=IDLE;
       end
 
       MEMWRITE: begin //once we hit this state we can assume block is cache (next update word based on mask and input data)

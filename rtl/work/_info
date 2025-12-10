@@ -1,0 +1,77 @@
+m255
+K4
+z2
+!s11f vlog 2020.1 2020.02, Feb 28 2020
+13
+!s112 1.1
+!i10d 8192
+!i10e 25
+!i10f 100
+cModel Technology
+Z0 d/home/vedaant/school_files/fall2025/ECE552/proj6/Cache-Integration/rtl
+vcache
+Z1 !s110 1765338076
+!i10b 1
+!s100 W2l3Hma8Z:4[_5iT:?h5R1
+Z2 !s11b Dg1SIo80bB@j0V0VzS_@n1
+I>8A`m9A[;I;cPa<OWoJ?K0
+Z3 VDg1SIo80bB@j0V0VzS_@n1
+R0
+w1765338073
+8cache.v
+Fcache.v
+!i122 21
+L0 3 370
+Z4 OV;L;2020.1;71
+r1
+!s85 0
+31
+Z5 !s108 1765338076.000000
+!s107 tb_memory.v|cache.v|cache_tb.v|
+Z6 !s90 cache_tb.v|cache.v|tb_memory.v|
+!i113 1
+Z7 tCvgOpt 0
+vcache_tb
+R1
+!i10b 1
+!s100 6UbNAN][Y67?M5PMQhUEh2
+R2
+I2e^9=<C]AfK@zQIZm8c=c2
+R3
+R0
+w1765332313
+8cache_tb.v
+Fcache_tb.v
+!i122 21
+L0 1 219
+R4
+r1
+!s85 0
+31
+R5
+Z8 !s107 tb_memory.v|cache.v|cache_tb.v|
+R6
+!i113 1
+R7
+vmemory
+R1
+!i10b 1
+!s100 OLG9<oQ6Y2C3D;RRZI_FW1
+R2
+IWAdj4YRT6hi^1;<Y@QgZ]0
+R3
+R0
+w1765324682
+8tb_memory.v
+Ftb_memory.v
+!i122 21
+L0 8 141
+R4
+r1
+!s85 0
+31
+R5
+R8
+R6
+!i113 1
+R7
