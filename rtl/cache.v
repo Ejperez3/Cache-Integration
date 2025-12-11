@@ -365,8 +365,13 @@ module cache (
 
       MEMWRITE: begin //once we hit this state we can assume block is cache (next update word based on mask and input data)
       //if its a hit, busy1=0
+      if(~i_mem_ready)begin
+        busy1=1'b1;
+        next_state=MEMWRITE;
+      end
+
         busy1 = 1'b1;  //hold busy to keep inputs stable 
-        if(Line0_hit || Line1_hit)begin
+        if(i_mem_ready && (Line0_hit || Line1_hit)) begin
           busy1=1'b0;
         end
        if(i_mem_ready)begin 
