@@ -128,13 +128,16 @@ module cache (
   localparam OUT_DATA=2'b11;
   reg [1:0] state;
   reg [1:0] next_state;
+  reg [1:0] prev_state; 
 
   //fsm state transition
   always @(posedge i_clk) begin
     if (i_rst) begin
       state <= IDLE;
+      prev_state <= IDLE; 
     end else begin
       state <= next_state;
+      prev_state <= state;
     end
   end
 
@@ -282,9 +285,29 @@ module cache (
  // manipulate data 
  // write to cache 
  // write to memory 
+  reg [31:0] i_req_wdata_reg; 
 
- wire [31:0] Data2Write = (cache_word & ~mask32) | (i_req_wdata & mask32); //this should setup data to write to cache and memory
+  always @(posedge i_clk) begin
+    if(i_rst)begin 
+      i_req_wdata_reg <= 32'd0; 
+    end else if (state == IDLE)begin 
+      i_req_wdata_reg <= i_req_wdata;
+    end 
+  end 
+ 
+ reg [31:0] mask32_reg;
 
+  always @(posedge i_clk) begin
+    if(i_rst)begin 
+      mask32_reg <= 32'hFFFFFFFF; 
+    end else begin 
+      mask32_reg <= mask32;
+    end 
+  end 
+
+ wire [31:0] Data2Write = (cache_word & ~mask32_reg) | (i_req_wdata_reg & mask32_reg); //this should setup data to write to cache and memory
+
+  
 
  always @(posedge i_clk) begin
 
@@ -362,7 +385,7 @@ module cache (
       MEMWRITE: begin //once we hit this state we can assume block is cache (next update word based on mask and input data)
       //if its a hit, busy1=0
         busy1 = 1'b1;  //hold busy to keep inputs stable 
-        if((Line0_hit || Line1_hit) & i_mem_ready)begin
+        if((Line0_hit || Line1_hit) && i_mem_ready & (prev_state != MEMWRITE))begin
           busy1=1'b0;
         end
        if(i_mem_ready)begin 
