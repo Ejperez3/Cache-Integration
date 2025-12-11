@@ -88,7 +88,7 @@ module cache (
   reg o_mem_wen_reg;
   assign o_mem_wen = o_mem_wen_reg;
   reg [31:0] o_mem_wdata_reg;
-  assign o_mem_wdata = o_mem_wdata_reg;
+  //assign o_mem_wdata = o_mem_wdata_reg;
   reg busy1;
   assign o_busy = busy1;
 
@@ -305,16 +305,16 @@ module cache (
         lru[req_index] <= 1'b0; //way 1 just used so way0 is LRU
       end 
 
-      o_mem_wdata_reg <= Data2Write;
-      o_mem_wen_reg   <= 1'b1; 
+      //o_mem_wdata_reg <= Data2Write;
+      //o_mem_wen_reg   <= 1'b1; 
       //o_mem_addr_reg  <= i_req_addr; 
 
     end 
   end 
  end 
 
-
-
+ assign o_mem_wen   = ready2write;  
+ assign o_mem_wdata = Data2Write; 
 
   //write signal to be set to 1 inside the state machine when in the write
   //state
@@ -365,13 +365,8 @@ module cache (
 
       MEMWRITE: begin //once we hit this state we can assume block is cache (next update word based on mask and input data)
       //if its a hit, busy1=0
-      if(~i_mem_ready)begin
-        busy1=1'b1;
-        next_state=MEMWRITE;
-      end
-
         busy1 = 1'b1;  //hold busy to keep inputs stable 
-        if(i_mem_ready && (Line0_hit || Line1_hit)) begin
+        if((Line0_hit || Line1_hit) & i_mem_ready)begin
           busy1=1'b0;
         end
        if(i_mem_ready)begin 
