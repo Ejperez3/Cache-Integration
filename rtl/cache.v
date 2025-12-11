@@ -86,7 +86,6 @@ module cache (
   reg o_mem_ren_reg;
 //  assign o_mem_ren = o_mem_ren_reg;
   reg o_mem_wen_reg;
-  assign o_mem_wen = o_mem_wen_reg;
   reg [31:0] o_mem_wdata_reg;
   //assign o_mem_wdata = o_mem_wdata_reg;
   reg busy1;
@@ -288,9 +287,6 @@ module cache (
 
 
  always @(posedge i_clk) begin
-   if(state!=MEMWRITE)begin
-     o_mem_wen_reg<=1'b0;
-   end
 
   if(state == MEMWRITE)begin 
 
