@@ -193,15 +193,26 @@ module cache (
   //for the block 
   //the data to load from memory via offset should be given by this
   wire [31:0] o_req_addr_offset;
+  reg [31:0] flopped_i_req; 
 
   //cycle to include word wanted and the following three words
   assign o_req_addr_offset = i_req_addr + {28'b0, mem_add_read,2'b0};
 
   assign o_mem_addr = (state==MEMREAD)? o_req_addr_offset:
-                      (state==MEMWRITE)? i_req_addr:
+                      (state==MEMWRITE)? flopped_i_req:
                        32'b0;
   assign o_mem_ren=(state==MEMREAD)?1'b1:1'b0;
   
+
+
+  always @(posedge i_clk) begin
+    if (i_rst) begin
+      flopped_i_req <= 32'd0;
+    end else begin 
+      flopped_i_req <= i_req_addr; 
+    end 
+  end 
+
   //logic for loading 4 words of data on any read from memory
   reg[1:0] block_offset;
   always @(posedge i_clk) begin
