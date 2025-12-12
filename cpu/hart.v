@@ -655,20 +655,35 @@ wire [31:0] aligned_address;
     (reg1_Data_sel_C==2'b10)?reg0_ALU_result:
     MEM_DATA;
     
+  cache D_cache(
+    .i_clk(i_clk),
+    .i_rst(i_rst),
+    .i_mem_ready(i_dmem_ready),
+    .o_mem_addr(o_dmem_addr),
+    .o_mem_ren(o_dmem_ren),
+    .o_mem_wen(o_dmem_wen),
+    .o_mem_wdata(o_dmem_wdata),
+    .i_mem_rdata(i_dmem_rdata),
+    .i_mem_valid(i_dmem_valid),
+    .o_busy(d_cache_stall),
+    .i_req_addr(reg0_aligned_address),
+    .i_req_ren(reg1_MemRead_C),
+    .i_req_wen(reg1_MemWrite_C),
+    .i_req_mask(reg0_mask),
+    .i_req_wdata(reg0_WriteDataMem),
+    .o_res_rdata(MEM_DATA)
+  );
 
 
 
-
-
-
-  assign o_dmem_addr = reg0_aligned_address;  //assign memory adress port to ALU result  
-  wire dmem_ren;
-  assign dmem_ren=reg1_MemRead_C;
-  assign o_dmem_ren  = dmem_ren;   //assign Memory Read enable signal 
-  assign dmem_wen=reg1_MemWrite_C;
-  assign o_dmem_wen  = reg1_MemWrite_C;  //assign Memory Write enable signal 
-  assign o_dmem_wdata = reg0_WriteDataMem;     //assign Memory Write data port to register output #2
-  assign MEM_DATA = i_dmem_rdata;    //data returned from memory 
+  //assign o_dmem_addr = reg0_aligned_address;  //assign memory adress port to ALU result 
+  //wire dmem_ren; 
+  //assign dmem_ren=reg1_MemRead_C;
+  //assign o_dmem_ren  = dmem_ren;   //assign Memory Read enable signal 
+  //assign dmem_wen = reg1_MemWrite_C;
+  //assign o_dmem_wen  = reg1_MemWrite_C;  //assign Memory Write enable signal 
+  //assign o_dmem_wdata = reg0_WriteDataMem;     //assign Memory Write data port to register output #2
+  //assign MEM_DATA = i_dmem_rdata;    //data returned from memory 
 
 
 
@@ -750,7 +765,7 @@ always @(posedge i_clk) begin
 THIS section still needs to be checked and filled in properly (some values are being used as placeholders for now)
 We can add extra output signals from modules to connect below 
 */
-  assign o_dmem_mask = reg0_mask; //this used to control half word/byte loads and write (set to full word only for now)
+ // assign o_dmem_mask = reg0_mask; //this used to control half word/byte loads and write (set to full word only for now)
 
 
   assign o_retire_valid = reg3_retire_valid &  ~i_rst; //one instruction should be done every cycle
