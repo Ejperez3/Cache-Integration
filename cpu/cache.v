@@ -390,7 +390,7 @@ module cache (
         cache_Rhit = 1'b1;
         if ((i_req_wen || i_req_ren) && ~hit) begin  //cache miss
           next_state = MEMREAD;
-          busy1 = 1'b1;
+          //busy1 = 1'b1;
           cache_Rhit = 1'b0;
         end
 
@@ -418,6 +418,7 @@ module cache (
       end
 
       OUT_DATA: begin
+        busy1 = 1'b1;
         cache_Rhit = 1'b1;
         next_state = IDLE;
       end

@@ -271,7 +271,7 @@ wire i_cache_req_ren;
  TODO: EXPECTS INPUT OF NOP
 */
 wire m_cache_req_ren;
-assign i_cache_req_ren=(rst_reg)?1'b0:1'b1;
+assign i_cache_req_ren=(i_rst)?1'b0:1'b1;
   always@(posedge i_clk)begin
     if(i_rst)
       rst_reg<=1'b1;
