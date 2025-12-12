@@ -221,9 +221,6 @@ Delcleration of any extra wires needed for connecting modules and for signals us
   wire i_cache_stall;
   wire d_cache_stall;
   wire PC_En;
-  //next PC should maintain current PC if the instruction cache stalled
-  //
-  //next_PC is driven by something something and goes back into cache!
   assign next_PC =(rst_reg)?(32'd0):((~IF_ID_En||i_cache_stall||d_cache_stall)?(PC_plus4-32'd4):((PC_MUX_SEL[0]) ? JB_PC : PC_plus4));
 
   wire[31:0] current_PC_w;
@@ -239,8 +236,9 @@ Delcleration of any extra wires needed for connecting modules and for signals us
   wire[31:0] raw_current_PC;
   wire flush;
   reg flopped_flush;
+  //should account for flused jump logic
   assign raw_current_PC=(flush)?next_PC:
-    (flopped_flush)?next_PC:
+    (flopped_flush)next_PC:
     (IF_ID_En)?(current_PC_w):
                         (current_PC_w==32'b0)?(current_PC_w):
                         (current_PC_w-32'd4);

@@ -1,0 +1,13 @@
+VCD info: dumpfile hart.vcd opened for output.
+Loading program.
+Resetting hart.
+PC        Inst     rs1            rs2            [rd, load, store]
+[00000000] 00100013 r[ 0]=00000000 r[--]=--------
+[00000004] 00000293 r[ 0]=00000000 r[--]=-------- w[ 5]=00000000
+[00000008] 00501463 r[ 0]=00000000 r[ 5]=00000000
+[0000000c] 0100006f r[--]=-------- r[--]=--------
+[0000001c] 00100513 r[ 0]=00000000 r[--]=-------- w[10]=00000001
+[00000020] 00100073 r[--]=-------- r[--]=--------
+Program halted after          48 cycles.
+Total instructions retired:           6
+CPI: 8.000000
