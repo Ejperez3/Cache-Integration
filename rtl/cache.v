@@ -190,6 +190,33 @@ module cache (
     end
   end
 
+
+ reg [31:0] Write_Buffer_data; 
+ reg [31:0] Write_Buffer_addr; 
+  reg WriteHit_reg; 
+
+ wire Update_buffer = WriteHit_reg & ready2write;//last request was write hit and current is write hit 
+
+   always @(posedge i_clk) begin
+    if (i_rst) begin
+      Write_Buffer_data <= 1'b0;
+      Write_Buffer_addr <= 1'b0;
+    end else begin
+      if (Update_buffer) begin
+        Write_Buffer_data <= Data2Write;
+        Write_Buffer_addr <= i_req_addr;
+      end
+    end
+  end
+
+  always @(posedge i_clk) begin
+    if (i_rst) begin
+      WriteHit_reg <= 1'b0; 
+    end else begin
+      WriteHit_reg <= ready2write; 
+    end
+  end
+
   //LOGIC FOR FETCHING LINES FROM MEMORY IN MEMREAD STATE
   //if currently in the MEMREAD state, attempt to sequentially read addresses
   //for the block 
