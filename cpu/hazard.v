@@ -13,15 +13,6 @@ module hazard (
     input wire [4:0] IF_ID_RS2,
     input wire valid_inst,
 
-    input wire i_imem_ready,
-    input wire i_o_imem_ren,
-    input wire i_imem_valid,
-
-    input wire i_dmem_ready,
-    input wire i_o_dmem_wen,
-    input wire i_o_dmem_ren,
-    input wire i_dmem_valid,
-
     input wire [4:0] ID_EX_WriteReg,
     input wire       ID_EX_MemRead,
 
@@ -29,21 +20,18 @@ module hazard (
     output wire PC_En,
     output wire IF_ID_En,
     output wire Mux_sel,
-    output wire i_cache_stall,
-    output wire d_cache_stall
+    output wire i_cache_stall
 );
 
   wire is_jump_or_lui;
   assign is_jump_or_lui=(op_code==(7'b0110111)|| op_code==7'b0010111 || op_code==7'b1101111);
-  assign i_cache_stall = (i_o_imem_ren && ~i_imem_ready);
-  assign d_cache_stall=((i_o_dmem_ren || i_o_dmem_wen) && ~i_dmem_ready);
 
   wire load_use_hazard;
   assign load_use_hazard = valid_inst && (~is_jump_or_lui) && (ID_EX_MemRead) && ((ID_EX_WriteReg == IF_ID_RS1) || (ID_EX_WriteReg == IF_ID_RS2)) && (ID_EX_WriteReg != 5'd0);
 
-  assign PC_En = (~load_use_hazard);
-  assign IF_ID_En = (~load_use_hazard);
-  assign Mux_sel = (load_use_hazard);
+  assign PC_En = ~(load_use_hazard||i_cache_stall);
+  assign IF_ID_En = ~(load_use_hazard||i_cache_stall);
+  assign Mux_sel = (load_use_hazard||i_cache_stall);
 
 
   //if the memory is busy, just stall
