@@ -238,7 +238,7 @@ Delcleration of any extra wires needed for connecting modules and for signals us
   reg flopped_flush;
   //should account for flused jump logic
   assign raw_current_PC=(flush)?next_PC:
-    (flopped_flush)next_PC:
+    (flopped_flush)?next_PC:
     (IF_ID_En)?(current_PC_w):
                         (current_PC_w==32'b0)?(current_PC_w):
                         (current_PC_w-32'd4);
