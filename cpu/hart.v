@@ -219,11 +219,12 @@ Delcleration of any extra wires needed for connecting modules and for signals us
   reg rst_reg;
 
   wire i_cache_stall;
+  wire d_cache_stall;
   wire PC_En;
   //next PC should maintain current PC if the instruction cache stalled
   //
   //next_PC is driven by something something and goes back into cache!
-  assign next_PC =(rst_reg)?(32'd0):((~IF_ID_En||i_cache_stall)?(PC_plus4-32'd4):((PC_MUX_SEL[0]) ? JB_PC : PC_plus4));
+  assign next_PC =(rst_reg)?(32'd0):((~IF_ID_En||i_cache_stall||d_cache_stall)?(PC_plus4-32'd4):((PC_MUX_SEL[0]) ? JB_PC : PC_plus4));
 
   wire[31:0] current_PC_w;
   IF fetch_inst (
@@ -236,21 +237,31 @@ Delcleration of any extra wires needed for connecting modules and for signals us
       .o_inc_pc(PC_plus4)  //output- current PC + 4 
   );
   wire[31:0] raw_current_PC;
-  assign raw_current_PC=(IF_ID_En)?(current_PC_w):
+  wire flush;
+  reg flopped_flush;
+  assign raw_current_PC=(flush)?next_PC:
+    (flopped_flush)?next_PC:
+    (IF_ID_En)?(current_PC_w):
                         (current_PC_w==32'b0)?(current_PC_w):
                         (current_PC_w-32'd4);
 
   //NEED TO USE A POST FLOPPED THING
   reg[31:0] current_PC;
   always@(posedge i_clk)begin
-    if(i_rst)
+    if(i_rst)begin
       current_PC<=32'b0;
-    else
-      current_PC<=raw_current_PC;
+    flopped_flush<=1'b0;
+  end
+  else begin
+      if(flush)
+        flopped_flush<=1'b1;
+      else
+        flopped_flush<=1'b0;
+  current_PC<=raw_current_PC;
+  end
   end
 
   wire Mux_sel;
-  wire d_cache_stall;
 wire i_cache_req_ren;
   wire [31:0] i_cache_instruct;
   cache I_cache(
@@ -291,11 +302,14 @@ assign i_cache_req_ren=(i_rst)?1'b0:1'b1;
   wire branch_taken; 
   assign branch_taken = (PC_MUX_SEL == 2'b11);
   //TODO: 
-  wire flush;
   reg reg1_jal_C;
   reg reg0_jal_C;
   reg reg0_jalr_C;
+  reg flopped_i_cache_stall;
+
   assign flush=(reg0_jal_C ||reg0_jalr_C||branch_taken);
+
+
 
   reg [31:0] reg0_PC_plus4;
   reg [31:0] reg0_current_PC;
