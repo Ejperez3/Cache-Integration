@@ -12,7 +12,7 @@ module IF(
 
 always @(posedge i_clk) begin
     if (i_rst) begin
-        o_PC <= 32'h00000000;  // reset PC
+        o_PC <= 32'd4;  // reset PC
     end else if (IF_EN) begin
         o_PC <= i_NextPC;      // update PC when IF_EN is 1
     end else begin

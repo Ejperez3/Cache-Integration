@@ -237,8 +237,9 @@ Delcleration of any extra wires needed for connecting modules and for signals us
   );
   wire[31:0] raw_current_PC;
   assign raw_current_PC=(IF_ID_En)?(current_PC_w):
-    (current_PC_w==32'b0)?(current_PC_w):
-    (current_PC_w-32'd4);
+                        (current_PC_w==32'b0)?(current_PC_w):
+                        (current_PC_w-32'd4);
+
   //NEED TO USE A POST FLOPPED THING
   reg[31:0] current_PC;
   always@(posedge i_clk)begin
