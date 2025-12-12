@@ -240,7 +240,6 @@ Delcleration of any extra wires needed for connecting modules and for signals us
     (current_PC_w==32'b0)?(current_PC_w):
     (current_PC_w-32'd4);
 
-  assign o_imem_raddr = next_PC;  //assign instruction memory read adress to current PC
 
   wire Mux_sel;
   wire d_cache_stall;
@@ -305,7 +304,7 @@ assign i_cache_req_ren=(rst_reg)?1'b0:1'b1;
       reg0_curr_instruct <= 32'd0;
       reg0_retire_valid  <= 1'd0; 
       //you can load the instruction if its being shown as valid
-    end else if (IF_ID_En && i_imem_valid) begin
+    end else if (IF_ID_En) begin
       reg0_PC_plus4      <= PC_plus4;
       reg0_current_PC    <= current_PC;
       reg0_curr_instruct <= i_cache_instruct;
