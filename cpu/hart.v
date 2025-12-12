@@ -182,7 +182,6 @@ Delcleration of any extra wires needed for connecting modules and for signals us
 */
 
   wire [31:0] JB_PC;
-  wire [31:0] current_PC;  //will hold current PC value 
   wire [31:0] next_PC;  //holds the adress to be updated in PC next 
   wire [31:0] PC_plus4;  //will hold PC+4 value
 
@@ -223,8 +222,8 @@ Delcleration of any extra wires needed for connecting modules and for signals us
   wire PC_En;
   //next PC should maintain current PC if the instruction cache stalled
   //
+  //next_PC is driven by something something and goes back into cache!
   assign next_PC =(rst_reg)?(32'd0):((~IF_ID_En||i_cache_stall)?(PC_plus4-32'd4):((PC_MUX_SEL[0]) ? JB_PC : PC_plus4));
-
 
   wire[31:0] current_PC_w;
   IF fetch_inst (
@@ -236,10 +235,18 @@ Delcleration of any extra wires needed for connecting modules and for signals us
       .o_PC(current_PC_w),            //output- current PC feed into instruction memory and other locations (schematic) 
       .o_inc_pc(PC_plus4)  //output- current PC + 4 
   );
-  assign current_PC=(IF_ID_En)?(current_PC_w):
+  wire[31:0] raw_current_PC;
+  assign raw_current_PC=(IF_ID_En)?(current_PC_w):
     (current_PC_w==32'b0)?(current_PC_w):
     (current_PC_w-32'd4);
-
+  //NEED TO USE A POST FLOPPED THING
+  reg[31:0] current_PC;
+  always@(posedge i_clk)begin
+    if(i_rst)
+      current_PC<=32'b0;
+    else
+      current_PC<=raw_current_PC;
+  end
 
   wire Mux_sel;
   wire d_cache_stall;
@@ -309,7 +316,6 @@ assign i_cache_req_ren=(i_rst)?1'b0:1'b1;
       reg0_current_PC    <= current_PC;
       reg0_curr_instruct <= i_cache_instruct;
       reg0_retire_valid  <= 1'd1;
-      //maintain current state if dcache stall
     end else begin
       reg0_PC_plus4      <= reg0_PC_plus4;
       reg0_current_PC    <= reg0_current_PC;
