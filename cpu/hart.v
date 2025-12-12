@@ -236,7 +236,9 @@ Delcleration of any extra wires needed for connecting modules and for signals us
       .o_PC(current_PC_w),            //output- current PC feed into instruction memory and other locations (schematic) 
       .o_inc_pc(PC_plus4)  //output- current PC + 4 
   );
-  assign current_PC=(IF_ID_En)?(current_PC_w):(current_PC_w-32'd4);
+  assign current_PC=(IF_ID_En)?(current_PC_w):
+    (current_PC_w==32'b0)?(current_PC_w):
+    (current_PC_w-32'd4);
 
   assign o_imem_raddr = next_PC;  //assign instruction memory read adress to current PC
 
@@ -794,7 +796,7 @@ We can add extra output signals from modules to connect below
   assign o_retire_rd_wdata = WriteDataReg;
 
   // retire PC values
-  assign o_retire_pc = reg3_current_PC-32'd4;
+  assign o_retire_pc = reg3_current_PC;
   assign o_retire_next_pc = next_PC;
 
   assign o_retire_dmem_addr = reg1_aligned_address; 

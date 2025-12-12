@@ -20,7 +20,7 @@ module hazard (
     output wire PC_En,
     output wire IF_ID_En,
     output wire Mux_sel,
-    output wire i_cache_stall
+    input wire i_cache_stall
 );
 
   wire is_jump_or_lui;

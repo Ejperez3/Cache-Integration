@@ -10,7 +10,7 @@ z2
 cModel Technology
 Z0 d/home/vedaant/school_files/fall2025/ECE552/proj6/Cache-Integration/cpu
 valu
-Z1 !s110 1765507805
+Z1 !s110 1765509457
 !i10b 1
 !s100 oc7H75DcELa>N=>JcF^zA2
 Z2 !s11b Dg1SIo80bB@j0V0VzS_@n1
@@ -20,13 +20,13 @@ R0
 Z4 w1765482926
 Z5 8alu.v
 Z6 Falu.v
-!i122 56
+!i122 70
 L0 8 89
 Z7 OV;L;2020.1;71
 r1
 !s85 0
 31
-Z8 !s108 1765507805.000000
+Z8 !s108 1765509457.000000
 !s107 WB.v|tb.v|tb_memory.v|S_extend.v|rf.v|MEM.v|mask_gen.v|imm.v|imm_format.v|IF.v|ID.v|hazard.v|hart.v|Forwarding_unit.v|EX.v|Control.v|cache.v|branch.v|alu.v|alu_control.v|
 Z9 !s90 alu_control.v|alu.v|branch.v|cache.v|Control.v|EX.v|Forwarding_unit.v|hart.v|hazard.v|ID.v|IF.v|imm_format.v|imm.v|mask_gen.v|MEM.v|rf.v|S_extend.v|tb_memory.v|tb.v|WB.v|
 !i113 1
@@ -42,7 +42,7 @@ R0
 R4
 8alu_control.v
 Falu_control.v
-!i122 56
+!i122 70
 Z11 L0 3 67
 R7
 r1
@@ -64,7 +64,7 @@ R0
 R4
 R5
 R6
-!i122 56
+!i122 70
 L0 98 42
 R7
 r1
@@ -86,7 +86,7 @@ R0
 R4
 8branch.v
 Fbranch.v
-!i122 56
+!i122 70
 L0 10 22
 R7
 r1
@@ -108,7 +108,7 @@ R0
 w1765506304
 8cache.v
 Fcache.v
-!i122 56
+!i122 70
 L0 3 443
 R7
 r1
@@ -130,7 +130,7 @@ R0
 R4
 8Control.v
 FControl.v
-!i122 56
+!i122 70
 L0 9 84
 R7
 r1
@@ -153,7 +153,7 @@ R0
 R4
 8EX.v
 FEX.v
-!i122 56
+!i122 70
 R11
 R7
 r1
@@ -176,7 +176,7 @@ R0
 R4
 8Forwarding_unit.v
 FForwarding_unit.v
-!i122 56
+!i122 70
 L0 7 57
 R7
 r1
@@ -191,16 +191,16 @@ n@forwarding_unit
 vhart
 R1
 !i10b 1
-!s100 SDli;`?FFE9>N=:J`k=F@0
+!s100 =Fj5JC@;j<hH=JKFBbl7@3
 R2
-I>EoQ=;BlC:b6>W4c?J<330
+I`ZlhjA?:hZan9SB=S3To:1
 R3
 R0
-w1765507801
+w1765509455
 8hart.v
 Fhart.v
-!i122 56
-L0 36 759
+!i122 70
+L0 36 776
 R7
 r1
 !s85 0
@@ -221,7 +221,7 @@ R0
 w1765490915
 8tb.v
 Ftb.v
-!i122 56
+!i122 70
 L0 1 198
 R7
 r1
@@ -235,15 +235,15 @@ R10
 vhazard
 R1
 !i10b 1
-!s100 Q^Z:hYLiKRL2YIHX`6lDh2
+!s100 GZE;G;BS79z;6@dHPHWj`0
 R2
-IHM0zHhgJJId?BdTDj3LOU3
+IVVnS4>B3bJ4HE0BCCaJzF2
 R3
 R0
-w1765506951
+w1765508527
 8hazard.v
 Fhazard.v
-!i122 56
+!i122 70
 L0 10 34
 R7
 r1
@@ -265,7 +265,7 @@ R0
 R4
 8ID.v
 FID.v
-!i122 56
+!i122 70
 L0 2 81
 R7
 r1
@@ -288,7 +288,7 @@ R0
 w1765503255
 8IF.v
 FIF.v
-!i122 56
+!i122 70
 L0 3 23
 R7
 r1
@@ -311,7 +311,7 @@ R0
 R4
 8imm.v
 Fimm.v
-!i122 56
+!i122 70
 L0 7 25
 R7
 r1
@@ -333,7 +333,7 @@ R0
 R4
 8imm_format.v
 Fimm_format.v
-!i122 56
+!i122 70
 L0 2 34
 R7
 r1
@@ -355,7 +355,7 @@ R0
 R4
 8mask_gen.v
 Fmask_gen.v
-!i122 56
+!i122 70
 L0 35 23
 R7
 r1
@@ -377,7 +377,7 @@ R0
 R4
 8MEM.v
 FMEM.v
-!i122 56
+!i122 70
 Z13 L0 2 26
 R7
 r1
@@ -400,7 +400,7 @@ R0
 w1765483055
 8tb_memory.v
 Ftb_memory.v
-!i122 56
+!i122 70
 L0 8 141
 R7
 r1
@@ -422,7 +422,7 @@ R0
 R4
 8rf.v
 Frf.v
-!i122 56
+!i122 70
 L0 12 56
 R7
 r1
@@ -444,7 +444,7 @@ R0
 R4
 8S_extend.v
 FS_extend.v
-!i122 56
+!i122 70
 L0 3 43
 R7
 r1
@@ -467,7 +467,7 @@ R0
 R4
 8WB.v
 FWB.v
-!i122 56
+!i122 70
 R13
 R7
 r1
