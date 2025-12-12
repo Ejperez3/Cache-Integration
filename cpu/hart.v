@@ -215,15 +215,11 @@ Delcleration of any extra wires needed for connecting modules and for signals us
 */
 
 //signal indicating that the memory is ready to take another request
-//
 //MEMORY STALL SIGNALS
-  wire Mux_sel;
-  wire d_cache_stall;
-  wire i_cache_stall;
-
   // choose between PC+4 or jump/Branch PC (By default should be PC+4)
   reg rst_reg;
 
+  wire i_cache_stall;
   wire PC_En;
   //next PC should maintain current PC if the instruction cache stalled
   //
@@ -244,12 +240,37 @@ Delcleration of any extra wires needed for connecting modules and for signals us
 
   assign o_imem_raddr = next_PC;  //assign instruction memory read adress to current PC
 
+  wire Mux_sel;
+  wire d_cache_stall;
+wire i_cache_req_ren;
+  wire [31:0] i_cache_instruct;
+  cache I_cache(
+    .i_clk(i_clk),
+    .i_rst(i_rst),
+    .i_mem_ready(i_imem_ready),
+    .o_mem_addr(o_imem_raddr),
+    .o_mem_ren(o_imem_ren),
+    .o_mem_wen(),
+    .o_mem_wdata(),
+    .i_mem_rdata(i_imem_rdata),
+    .i_mem_valid(i_imem_valid),
+    .o_busy(i_cache_stall),
+    .i_req_addr(current_PC),
+    .i_req_ren(i_cache_req_ren),
+    .i_req_wen(1'b0),
+    .i_req_mask(4'b1111),
+    .i_req_wdata(32'b0),
+    .o_res_rdata(i_cache_instruct)
+  );
+
 
   /* 
  IF/ID Piepline Register
  Include NOP control
  TODO: EXPECTS INPUT OF NOP
 */
+wire m_cache_req_ren;
+assign i_cache_req_ren=(rst_reg)?1'b0:1'b1;
   always@(posedge i_clk)begin
     if(i_rst)
       rst_reg<=1'b1;
@@ -276,7 +297,7 @@ Delcleration of any extra wires needed for connecting modules and for signals us
   //only load in values into reg0_current_instruct if i_imem_valid
   always @(posedge i_clk) begin
     //if the instruction being shown is NOT valid, add a nop?
-    if (i_rst || rst_reg||flush||i_cache_stall) begin
+    if (i_rst || rst_reg||flush) begin
       reg0_PC_plus4      <= 32'd0;
       reg0_current_PC    <= 32'd0;
       reg0_curr_instruct <= 32'd0;
@@ -285,7 +306,7 @@ Delcleration of any extra wires needed for connecting modules and for signals us
     end else if (IF_ID_En && i_imem_valid) begin
       reg0_PC_plus4      <= PC_plus4;
       reg0_current_PC    <= current_PC;
-      reg0_curr_instruct <= i_imem_rdata;
+      reg0_curr_instruct <= i_cache_instruct;
       reg0_retire_valid  <= 1'd1;
       //maintain current state if dcache stall
     end else begin
@@ -313,29 +334,15 @@ Delcleration of any extra wires needed for connecting modules and for signals us
 
   //NOTE: hazard should now stall 
   //always request instructions from memory?
-  assign o_imem_ren=1'b1;
   wire dmem_wen;
   hazard haz (
+    .i_cache_stall(i_cache_stall),
       .op_code(reg0_curr_instruct[6:0]),
       .IF_ID_RS1(reg0_curr_instruct[19:15]),
       .IF_ID_RS2(reg0_curr_instruct[24:20]), 
       .ID_EX_WriteReg(reg1_curr_instruct[11:7]),
       .valid_inst(reg0_retire_valid),
       .ID_EX_MemRead(reg0_MemRead_C),
-
-      //NEW SIGNALS FOR PROJECT 6
-      .i_dmem_ready(i_dmem_ready),
-        .i_o_imem_ren(o_imem_ren),
-        .i_imem_valid(i_imem_valid),
-        
-        .i_imem_ready(i_imem_ready),
-        .i_o_dmem_ren(o_dmem_ren),
-        .i_o_dmem_wen(dmem_wen),
-        .i_dmem_valid(i_dmem_valid),
-
-        .i_cache_stall(i_cache_stall),
-        .d_cache_stall(d_cache_stall),
-
       .PC_En(PC_En),
       .IF_ID_En(IF_ID_En),
       .Mux_sel(Mux_sel)
