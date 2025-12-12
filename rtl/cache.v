@@ -122,13 +122,15 @@ module cache (
  reg ready2write; 
 
   //FSM STATES
-  localparam IDLE    = 2'b00;
-  localparam MEMREAD = 2'b01;
-  localparam MEMWRITE= 2'b10;
-  localparam OUT_DATA=2'b11;
-  reg [1:0] state;
-  reg [1:0] next_state;
-  reg [1:0] prev_state; 
+  localparam IDLE     = 3'b000;
+  localparam MEMREAD  = 3'b001;
+  localparam MEMWRITE = 3'b010;
+  localparam OUT_DATA = 3'b011;
+  localparam STALL    = 3'b111; 
+
+  reg [2:0] state;
+  reg [2:0] next_state;
+  reg [2:0] prev_state; 
 
   //fsm state transition
   always @(posedge i_clk) begin
@@ -200,6 +202,7 @@ module cache (
 
   assign o_mem_addr = (state==MEMREAD)? o_req_addr_offset:
                       (state==MEMWRITE)? flopped_i_req:
+                      (state==IDLE & hit)? i_req_addr:
                        32'b0;
   assign o_mem_ren=(state==MEMREAD)?1'b1:1'b0;
   
@@ -297,17 +300,18 @@ module cache (
  // manipulate data 
  // write to cache 
  // write to memory 
-  reg [31:0] i_req_wdata_reg; 
+  // reg [31:0] i_req_wdata_reg; 
 
-  always @(posedge i_clk) begin
-    if(i_rst)begin 
-      i_req_wdata_reg <= 32'd0; 
-    end else if (state == IDLE)begin 
-      i_req_wdata_reg <= i_req_wdata;
-    end 
-  end 
+  // always @(posedge i_clk) begin
+  //   if(i_rst)begin 
+  //     i_req_wdata_reg <= 32'd0; 
+  //   end else if (state == IDLE)begin 
+  //     i_req_wdata_reg <= i_req_wdata;
+  //   end 
+  // end 
  
- reg [31:0] mask32_reg;
+
+ /*reg [31:0] mask32_reg;
 
   always @(posedge i_clk) begin
     if(i_rst)begin 
@@ -316,14 +320,13 @@ module cache (
       mask32_reg <= mask32;
     end 
   end 
-
- wire [31:0] Data2Write = (cache_word & ~mask32_reg) | (i_req_wdata_reg & mask32_reg); //this should setup data to write to cache and memory
+*/
+ wire [31:0] Data2Write = (cache_word & ~mask32) | (i_req_wdata & mask32); //this should setup data to write to cache and memory
 
   
 
- always @(posedge i_clk) begin
+  always @(posedge i_clk) begin
 
-  if(state == MEMWRITE)begin 
 
     if(ready2write)begin 
       if(Line0_hit)begin
@@ -339,10 +342,8 @@ module cache (
       //o_mem_wdata_reg <= Data2Write;
       //o_mem_wen_reg   <= 1'b1; 
       //o_mem_addr_reg  <= i_req_addr; 
-
     end 
   end 
- end 
 
  assign o_mem_wen   = ready2write;  
  assign o_mem_wdata = Data2Write; 
@@ -371,8 +372,8 @@ module cache (
         end 
 
         if (hit && i_req_wen) begin //cache write hit 
-          next_state = MEMWRITE;
-          cache_Rhit=1'b0;
+            cache_Rhit = 1'b0;
+            ready2write = 1'b1;   
         end
 
       end
@@ -397,14 +398,19 @@ module cache (
       MEMWRITE: begin //once we hit this state we can assume block is cache (next update word based on mask and input data)
       //if its a hit, busy1=0
         busy1 = 1'b1;  //hold busy to keep inputs stable 
-        if((Line0_hit || Line1_hit) && i_mem_ready & (prev_state != MEMWRITE))begin
-          busy1=1'b0;
-        end
+        // if((Line0_hit || Line1_hit) && i_mem_ready & (prev_state != MEMWRITE))begin
+        //   busy1=1'b0;
+        // end
        if(i_mem_ready)begin 
         ready2write = 1'b1; 
-        next_state = IDLE;
+        next_state = STALL;
        end 
       end
+
+      STALL: begin 
+       busy1 = 1'b1;
+       next_state = IDLE; //stall here while mem becomes ready after last request issued 
+      end 
 
     endcase
   end
