@@ -275,7 +275,7 @@ wire i_cache_req_ren;
   /* 
  IF/ID Piepline Register
  Include NOP control
- TODO: EXPECTS INPUT OF NOP
+ TODO: EXPECTS INPUT OF NOP comm
 */
 wire m_cache_req_ren;
 assign i_cache_req_ren=(i_rst)?1'b0:1'b1;
