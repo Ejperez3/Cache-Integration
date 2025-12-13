@@ -5,6 +5,7 @@ module IF(
   input wire i_clk,           //clk to control PC update
   input wire i_rst,           //used to reset PC to starting value
   input wire [31:0] i_NextPC,      //next adress for PC either PC+4 or branch/jump PC
+  input wire flush,
 
   output reg [31:0] o_PC,          //current PC will feed into instruction memory and other locations (schematic) 
   output wire [31:0] o_inc_pc  //Output current PC + 4 
@@ -13,7 +14,7 @@ module IF(
 always @(posedge i_clk) begin
     if (i_rst) begin
         o_PC <= 32'd4;  // reset PC
-    end else if (IF_EN) begin
+    end else if (IF_EN||flush) begin
         o_PC <= i_NextPC;      // update PC when IF_EN is 1
     end else begin
         o_PC <= o_PC;           // hold PC (synchronous stall)

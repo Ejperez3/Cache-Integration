@@ -221,21 +221,24 @@ Delcleration of any extra wires needed for connecting modules and for signals us
   wire i_cache_stall;
   wire d_cache_stall;
   wire PC_En;
-  assign next_PC =(rst_reg)?(32'd0):((~IF_ID_En||i_cache_stall||d_cache_stall)?(PC_plus4-32'd4):((PC_MUX_SEL[0]) ? JB_PC : PC_plus4));
+  wire flush_or_flopped_flush;
+  assign next_PC =(rst_reg)?(32'd0):((~flush_or_flopped_flush&(~IF_ID_En||i_cache_stall||d_cache_stall))?(PC_plus4-32'd4):((PC_MUX_SEL[0]) ? JB_PC : PC_plus4));
 
+  wire flush;
+  reg flopped_flush;
+  assign flush_or_flopped_flush=flush || flopped_flush;
   wire[31:0] current_PC_w;
   IF fetch_inst (
       .IF_EN(IF_ID_En),
       .i_clk   (i_clk),   //input- clk to control PC update
       .i_rst   (i_rst),   //input- used to reset PC to starting value
       .i_NextPC(next_PC), //input- next PC value                           
+      .flush(flush_or_flopped_flush),
 
       .o_PC(current_PC_w),            //output- current PC feed into instruction memory and other locations (schematic) 
       .o_inc_pc(PC_plus4)  //output- current PC + 4 
   );
   wire[31:0] raw_current_PC;
-  wire flush;
-  reg flopped_flush;
   //should account for flused jump logic
   assign raw_current_PC=(flush)?next_PC:
     (flopped_flush)?next_PC:
@@ -248,7 +251,7 @@ Delcleration of any extra wires needed for connecting modules and for signals us
   always@(posedge i_clk)begin
     if(i_rst)begin
       current_PC<=32'b0;
-    flopped_flush<=1'b0;
+      flopped_flush<=1'b0;
   end
   else begin
       if(flush)
@@ -483,7 +486,10 @@ reg [31:0] reg0_regData2;
       ALUmux2_reg0<=ALUmux2;
       reg1_current_PC    <= reg0_current_PC;
       reg1_PC_plus4      <= reg0_PC_plus4;
-      reg0_immediate_val <= immediate_val;
+      if(flush)
+        reg0_immediate_val <= immediate_val+32'd4;
+      else
+        reg0_immediate_val <= immediate_val;
       reg0_func3_val     <= func3_val;
       reg0_jal_C         <= jal_C;
       reg0_jalr_C        <= jalr_C;
@@ -581,7 +587,7 @@ assign ialu_operand2 = (fw_mux2) ? fw_alu_op2 :reg0_ALU_operand2;
   );
 
   
-assign JB_PC = (PC_MUX_SEL[1]) ? PC_offset :  ALU_result;
+assign JB_PC = (PC_MUX_SEL[1]) ? (PC_offset ):  ALU_result;
 
 wire byte_hw_unsigned;
 wire [3:0] mask;

@@ -419,7 +419,7 @@ module cache (
       end
 
       OUT_DATA: begin
-        busy1 = 1'b1;
+        busy1 = 1'b0;
         cache_Rhit = 1'b1;
         next_state = IDLE;
       end
